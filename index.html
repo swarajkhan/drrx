@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical Prescription Generator</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- html2pdf -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- Tailwind Config -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        medical: {
+                            teal: '#0d9488',
+                            slate: '#334155',
+                            coral: '#f87171',
+                            blue: '#bae6fd',
+                            light: '#f8fafc'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Merriweather', 'serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Merriweather:ital,wght@0,400;0,700;1,400&display=swap');
+        
+        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
+        
+        /* Hide scrollbar for input fields */
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        /* A4 Print Container */
+        .a4-container {
+            width: 210mm;
+            height: 296mm;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            position: relative;
+            overflow: hidden;
+            font-size: 14px;
+            color: #1e293b;
+        }
+
+        @media print {
+            body { background: white; }
+            .no-print { display: none !important; }
+            .a4-container { box-shadow: none; margin: 0; width: 210mm; height: 296mm; }
+        }
+
+        /* Template Specifics */
+        .bg-coral { background-color: #f87171; }
+        .bg-lightblue { background-color: #a5f3fc; }
+        .text-coral { color: #f87171; }
+        
+        .header-shape-right {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 65%;
+            height: 180px;
+            background-color: #f87171;
+            border-bottom-left-radius: 9999px;
+            z-index: 1;
+        }
+        .header-shape-left {
+            position: absolute;
+            top: -50px;
+            left: -50px;
+            width: 300px;
+            height: 300px;
+            background-color: #a5f3fc;
+            border-radius: 50%;
+            z-index: 1;
+        }
+        .header-shape-circle {
+            position: absolute;
+            top: 130px;
+            left: 50px;
+            width: 120px;
+            height: 120px;
+            background-color: #f87171;
+            border-radius: 50%;
+            z-index: 2;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 3rem;
+        }
+        
+        .watermark {
+            position: absolute;
+            top: 60%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0.1;
+            width: 60%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .input-dashed {
+            border: none;
+            border-bottom: 1px dashed #94a3b8;
+            background: transparent;
+            outline: none;
+            padding: 0 4px;
+        }
+        
+        .rx-symbol {
+            font-size: 3.5rem;
+            font-family: 'Times New Roman', serif;
+            font-weight: bold;
+            line-height: 1;
+            margin-bottom: 10px;
+        }
+        
+        .signature-canvas {
+            border: 2px dashed #cbd5e1;
+            border-radius: 0.5rem;
+            cursor: crosshair;
+            background: #fff;
+            touch-action: none;
+        }
+        
+        .modal-backdrop {
+            background-color: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(4px);
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        /* Checkbox styling */
+        .form-checkbox {
+            appearance: none;
+            width: 1rem;
+            height: 1rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 0.25rem;
+            display: inline-block;
+            vertical-align: middle;
+            background-origin: border-box;
+            user-select: none;
+            flex-shrink: 0;
+        }
+        .form-checkbox:checked {
+            background-color: #0d9488;
+            border-color: transparent;
+            background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e");
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col">
+
+<!-- Navbar -->
+<nav class="bg-white shadow-sm border-b border-slate-200 px-6 py-4 flex justify-between items-center no-print">
+    <div class="flex items-center gap-3">
+        <div class="bg-teal-600 text-white p-2 rounded-lg">
+            <i class="fa-solid fa-file-medical text-xl"></i>
+        </div>
+        <h1 class="text-xl font-bold text-slate-800 tracking-tight">RxGenerator</h1>
+    </div>
+    <div id="nav-actions" class="hidden">
+        <button onclick="logout()" class="text-sm font-medium text-slate-500 hover:text-red-500 transition-colors flex items-center gap-1 bg-slate-100 hover:bg-red-50 px-3 py-1.5 rounded-md">
+            <i class="fa-solid fa-sign-out-alt"></i> Reset Profile
+        </button>
+    </div>
+</nav>
+
+<!-- Main Container -->
+<main class="flex-grow p-4 md:p-8 relative max-w-7xl mx-auto w-full">
+
+    <!-- ==================== SCREEN 1: DOCTOR SET-UP ==================== -->
+    <div id="screen-1" class="hidden max-w-xl mx-auto mt-10">
+        <div class="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
+                <h2 class="text-lg font-bold text-slate-800">Doctor Profile Setup</h2>
+                <p class="text-sm text-slate-500">Enter your details to configure the prescription letterhead.</p>
+            </div>
+            <form id="doctor-form" class="p-6 space-y-4" onsubmit="saveDoctorProfile(event)">
+                
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Doctor Name <span class="text-red-500">*</span></label>
+                    <input type="text" id="doc-name" required placeholder="e.g. Dr. Aditi Mondal" class="w-full border border-slate-300 rounded-md p-2.5 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Registration Number <span class="text-red-500">*</span></label>
+                    <input type="text" id="doc-reg" required placeholder="e.g. WBMC 99475" class="w-full border border-slate-300 rounded-md p-2.5 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Field <span class="text-red-500">*</span></label>
+                    <select id="doc-field" required onchange="toggleSpecialization()" class="w-full border border-slate-300 rounded-md p-2.5 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all">
+                        <option value="General Physician">General Physician</option>
+                        <option value="Specialist">Specialist</option>
+                    </select>
+                </div>
+                
+                <div id="doc-spec-container" class="hidden">
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Specialization <span class="text-red-500">*</span></label>
+                    <input type="text" id="doc-spec" placeholder="e.g. Cardiologist" class="w-full border border-slate-300 rounded-md p-2.5 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Degrees</label>
+                    <div class="flex flex-wrap gap-4">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" value="M.B.B.S." class="doc-degree form-checkbox text-teal-600">
+                            <span class="text-sm text-slate-700">M.B.B.S.</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" value="M.D." class="doc-degree form-checkbox text-teal-600">
+                            <span class="text-sm text-slate-700">M.D.</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" value="D.M." class="doc-degree form-checkbox text-teal-600">
+                            <span class="text-sm text-slate-700">D.M.</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" value="Other" id="doc-degree-other-cb" onchange="toggleOtherDegree()" class="doc-degree form-checkbox text-teal-600">
+                            <span class="text-sm text-slate-700">Other</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div id="doc-degree-other-container" class="hidden">
+                    <input type="text" id="doc-degree-other" placeholder="Specify other degrees" class="w-full border border-slate-300 rounded-md p-2.5 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Phone No.</label>
+                    <input type="text" id="doc-phone" placeholder="e.g. +91 8918323759" class="w-full border border-slate-300 rounded-md p-2.5 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Clinic Address</label>
+                    <textarea id="doc-address" rows="2" placeholder="e.g. Bankura, West Bengal, India" class="w-full border border-slate-300 rounded-md p-2.5 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all"></textarea>
+                </div>
+                
+                <div class="pt-4 border-t border-slate-100">
+                    <button type="submit" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-4 rounded-md shadow-sm transition-colors flex items-center justify-center gap-2">
+                        Proceed to Pad <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- ==================== SCREEN 2: PRESCRIPTION ENTRY FORM ==================== -->
+    <div id="screen-2" class="hidden pb-24">
+        <div class="max-w-4xl mx-auto space-y-6">
+            
+            <!-- Patient Section -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+                <h3 class="text-md font-bold text-teal-800 border-b border-teal-100 pb-2 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-user-injured text-teal-600"></i> Patient Details
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+                    <div class="md:col-span-4">
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Name *</label>
+                        <input type="text" id="pat-name" required class="w-full border border-slate-300 rounded p-2 focus:border-teal-500 outline-none">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Age *</label>
+                        <input type="text" id="pat-age" required class="w-full border border-slate-300 rounded p-2 focus:border-teal-500 outline-none">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Sex *</label>
+                        <select id="pat-sex" required class="w-full border border-slate-300 rounded p-2 focus:border-teal-500 outline-none bg-white">
+                            <option value="M">M</option>
+                            <option value="F">F</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Weight</label>
+                        <input type="text" id="pat-weight" class="w-full border border-slate-300 rounded p-2 focus:border-teal-500 outline-none" placeholder="kg">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Date</label>
+                        <input type="date" id="pat-date" class="w-full border border-slate-300 rounded p-2 focus:border-teal-500 outline-none">
+                    </div>
+                    <div class="md:col-span-12">
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Address</label>
+                        <input type="text" id="pat-address" class="w-full border border-slate-300 rounded p-2 focus:border-teal-500 outline-none">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vitals Section -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+                <h3 class="text-md font-bold text-teal-800 border-b border-teal-100 pb-2 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-heart-pulse text-teal-600"></i> On Examination (O/E)
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Blood Pressure (mmHg)</label>
+                        <div class="flex items-center gap-2">
+                            <input type="number" id="vital-bp-sys" placeholder="Sys" class="w-full border border-slate-300 rounded p-2 text-center focus:border-teal-500 outline-none">
+                            <span class="text-slate-400 font-bold">/</span>
+                            <input type="number" id="vital-bp-dia" placeholder="Dia" class="w-full border border-slate-300 rounded p-2 text-center focus:border-teal-500 outline-none">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Pulse Rate (BPM)</label>
+                        <input type="number" id="vital-pr" class="w-full border border-slate-300 rounded p-2 focus:border-teal-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">SpO2 (%)</label>
+                        <input type="number" id="vital-spo2" class="w-full border border-slate-300 rounded p-2 focus:border-teal-500 outline-none">
+                    </div>
+                    <div class="md:col-span-3">
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Any other Vitals</label>
+                        <textarea id="vital-other" rows="2" class="w-full border border-slate-300 rounded p-2 focus:border-teal-500 outline-none" placeholder="e.g. Temp: 98.6 F"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Clinical Inputs -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+                <h3 class="text-md font-bold text-teal-800 border-b border-teal-100 pb-2 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-stethoscope text-teal-600"></i> Clinical & Diagnostic
+                </h3>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Symptoms</label>
+                        <textarea id="clin-symptoms" rows="2" class="w-full border border-slate-300 rounded p-2 focus:border-teal-500 outline-none"></textarea>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-2">Clinical Notes</label>
+                        <div id="notes-list" class="space-y-2 mb-2">
+                            <!-- Populated dynamically -->
+                        </div>
+                        <button onclick="addNote()" class="text-sm text-teal-600 font-semibold flex items-center gap-1 hover:text-teal-800 bg-teal-50 px-3 py-1.5 rounded border border-teal-100 transition-colors">
+                            <i class="fa-solid fa-plus"></i> Add Note
+                        </button>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Investigations</label>
+                        <textarea id="clin-investigations" rows="2" class="w-full border border-slate-300 rounded p-2 focus:border-teal-500 outline-none"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Medication Section -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+                <div class="flex justify-between items-center border-b border-teal-100 pb-2 mb-4">
+                    <h3 class="text-md font-bold text-teal-800 flex items-center gap-2">
+                        <i class="fa-solid fa-pills text-teal-600"></i> Medications (Rx)
+                    </h3>
+                </div>
+                
+                <div id="medicines-list">
+                    <!-- Populated dynamically -->
+                </div>
+                
+                <button onclick="addMedicine()" class="mt-2 text-sm bg-slate-800 text-white font-semibold flex items-center gap-2 hover:bg-slate-700 px-4 py-2 rounded-lg transition-colors shadow-sm w-full justify-center">
+                    <i class="fa-solid fa-plus-circle"></i> Add Medication
+                </button>
+            </div>
+
+            <!-- Advices & Follow-up Section -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+                <h3 class="text-md font-bold text-teal-800 border-b border-teal-100 pb-2 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-clipboard-list text-teal-600"></i> Advices & Follow-up
+                </h3>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-2">Advices</label>
+                        <div id="advices-list" class="space-y-2 mb-2">
+                            <!-- Populated dynamically -->
+                        </div>
+                        <button onclick="addAdvice()" class="text-sm text-teal-600 font-semibold flex items-center gap-1 hover:text-teal-800 bg-teal-50 px-3 py-1.5 rounded border border-teal-100 transition-colors">
+                            <i class="fa-solid fa-plus"></i> Add Advice
+                        </button>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Follow-up Date</label>
+                        <input type="date" id="follow-date" class="w-full md:w-1/3 border border-slate-300 rounded p-2 focus:border-teal-500 outline-none">
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Sticky Bottom Bar -->
+        <div class="fixed bottom-0 left-0 w-full bg-white border-t border-slate-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] p-4 z-40 no-print flex justify-center">
+            <button onclick="goToPreview()" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-transform transform hover:scale-105 flex items-center gap-2">
+                <i class="fa-regular fa-eye"></i> Preview Prescription
+            </button>
+        </div>
+    </div>
+
+
+    <!-- ==================== SCREEN 3: PREVIEW & SIGNATURE ==================== -->
+    <div id="screen-3" class="hidden pb-10">
+        
+        <div class="max-w-[210mm] mx-auto mb-6 flex justify-between items-center no-print">
+            <button onclick="setScreen('screen-2')" class="text-slate-600 hover:text-slate-800 font-semibold flex items-center gap-2 bg-white border border-slate-300 px-4 py-2 rounded-lg shadow-sm transition-colors">
+                <i class="fa-solid fa-arrow-left"></i> Edit Form
+            </button>
+            <button onclick="openSignatureModal()" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-6 rounded-lg shadow-sm transition-colors flex items-center gap-2">
+                <i class="fa-solid fa-pen-nib"></i> Confirm & Sign
+            </button>
+        </div>
+
+        <!-- A4 Print Container -->
+        <div class="a4-container" id="prescription-print">
+            <!-- Header -->
+            <div class="relative h-[220px] overflow-hidden">
+                <div class="header-shape-right"></div>
+                <div class="header-shape-left"></div>
+                <div class="header-shape-circle"><i class="fa-solid fa-user-doctor drop-shadow-md opacity-90"></i></div>
+                
+                <!-- Header Content -->
+                <div class="relative z-10 flex justify-between pt-8 px-10">
+                    <!-- Left Graphics placeholder -->
+                    <div class="w-32 h-32 relative z-20"></div>
+                    
+                    <!-- Right Doctor Info -->
+                    <div class="text-white text-right w-3/5 pt-2 pr-6 leading-snug">
+                        <h1 class="text-3xl font-serif font-bold mb-2 tracking-wide" id="print-doc-name">Dr. Name</h1>
+                        <p class="text-sm opacity-90 tracking-wide" id="print-doc-field">General Physician</p>
+                        <p class="text-[13px] font-semibold opacity-90 mt-1" id="print-doc-degrees">MBBS</p>
+                        <p class="text-[12px] opacity-80 mt-1">Reg. no.- <span id="print-doc-reg">12345</span></p>
+                    </div>
+                </div>
+                
+                <!-- Date -->
+                <div class="absolute bottom-1 right-10 text-sm font-semibold z-10 text-slate-800">
+                    DATE: <span class="input-dashed inline-block w-32 text-center" id="print-top-date"></span>
+                </div>
+            </div>
+            
+            <!-- Patient Banner -->
+            <div class="px-10 py-3 border-y-2 border-slate-300 mx-6 my-2 text-[13px] font-semibold flex flex-wrap gap-y-3">
+                <div class="w-full flex items-end">
+                    <span class="mr-2">NAME:</span>
+                    <span class="input-dashed flex-grow text-center text-[15px] font-bold text-slate-900 pb-0.5 uppercase tracking-wide" id="print-pat-name"></span>
+                    <span class="ml-4 mr-2">AGE:</span>
+                    <span class="input-dashed w-16 text-center pb-0.5" id="print-pat-age"></span>
+                    <span class="ml-4 mr-2">SEX:</span>
+                    <span class="input-dashed w-12 text-center pb-0.5" id="print-pat-sex"></span>
+                    <span class="ml-4 mr-2">WEIGHT:</span>
+                    <span class="input-dashed w-16 text-center pb-0.5" id="print-pat-weight"></span>
+                </div>
+                <div class="w-full flex items-end mt-2">
+                    <span class="mr-2">ADDRESS:</span>
+                    <span class="input-dashed flex-grow pb-0.5 font-normal" id="print-pat-address"></span>
+                </div>
+            </div>
+            
+            <!-- Body -->
+            <div class="px-10 flex relative" style="min-height: 170mm;">
+                <!-- Watermark Removed -->
+                
+                <!-- Left Column -->
+                <div class="w-[35%] pr-5 pt-4 border-r border-slate-300 relative z-10 flex flex-col gap-5">
+                    
+                    <!-- Symptoms -->
+                    <div id="print-symptoms-section" class="hidden">
+                        <h4 class="font-bold text-slate-800 underline mb-1 tracking-wide">Symptoms</h4>
+                        <p class="text-sm whitespace-pre-wrap text-slate-700" id="print-symptoms"></p>
+                    </div>
+                    
+                    <!-- O/E -->
+                    <div id="print-oe-section" class="hidden">
+                        <h4 class="font-bold text-slate-800 underline mb-1 tracking-wide">O/E</h4>
+                        <ul class="text-[13px] space-y-1 font-medium text-slate-800" id="print-vitals-list">
+                            <!-- populated via js -->
+                        </ul>
+                        <p class="text-sm whitespace-pre-wrap mt-2 text-slate-700" id="print-vitals-other"></p>
+                    </div>
+                    
+                    <!-- Clinical Notes -->
+                    <div id="print-notes-section" class="hidden">
+                        <h4 class="font-bold text-slate-800 underline mb-1 tracking-wide">Clinical Notes</h4>
+                        <ol class="list-decimal list-outside ml-4 text-[13px] space-y-1.5 text-slate-700" id="print-notes-list">
+                            <!-- populated via js -->
+                        </ol>
+                    </div>
+                    
+                    <!-- Investigations -->
+                    <div id="print-investigations-section" class="hidden">
+                        <h4 class="font-bold text-slate-800 underline mb-1 tracking-wide">Investigations</h4>
+                        <p class="text-sm whitespace-pre-wrap text-slate-700" id="print-investigations"></p>
+                    </div>
+                </div>
+                
+                <!-- Right Column -->
+                <div class="w-[65%] pl-6 pt-2 relative z-10 flex flex-col">
+                    <div class="rx-symbol text-slate-900">Rx</div>
+                    
+                    <!-- Medicines -->
+                    <div class="mt-2">
+                        <table class="w-full text-left text-[12.5px] text-slate-800 border-collapse">
+                            <thead>
+                                <tr class="border-b border-slate-300 text-slate-600 font-bold">
+                                    <th class="py-1">Medicine Name</th>
+                                    <th class="py-1">Dose</th>
+                                    <th class="py-1">Timing</th>
+                                    <th class="py-1">Days</th>
+                                </tr>
+                            </thead>
+                            <tbody id="print-medicines-list">
+                                <!-- populated via js -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Advices -->
+                    <div class="mt-4 hidden" id="print-advices-section">
+                        <h4 class="font-bold text-slate-800 underline mb-2 tracking-wide">Advices</h4>
+                        <ol class="list-decimal list-outside ml-5 text-[13px] space-y-1.5 text-slate-700" id="print-advices-list">
+                            <!-- populated via js -->
+                        </ol>
+                    </div>
+                    
+                    <!-- Follow Up -->
+                    <div class="mt-4 text-[13px] font-semibold text-slate-800 hidden" id="print-followup-section">
+                        Follow-up check on: <span class="input-dashed inline-block w-32 text-center text-teal-800 font-bold" id="print-followup"></span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Footer -->
+            <div class="absolute bottom-0 w-full px-10 py-5 flex justify-between items-end border-t-[10px] border-coral bg-white">
+                <!-- Left: Clinic Info -->
+                <div class="flex items-center gap-3 w-3/5 relative z-10">
+                    <div class="bg-blue-100 rounded-full w-8 h-8 flex justify-center items-center text-coral flex-shrink-0">
+                        <i class="fa-solid fa-plus font-bold text-sm"></i>
+                    </div>
+                    <div>
+                        <p class="text-[13px] font-bold text-slate-800 tracking-wide" id="print-doc-phone"></p>
+                        <p class="text-[11px] text-slate-600 whitespace-pre-wrap leading-tight mt-0.5" id="print-doc-address"></p>
+                    </div>
+                </div>
+                
+                <!-- Right: Signature -->
+                <div class="w-[30%] flex flex-col items-center relative z-10">
+                    <div class="h-16 w-full border-b border-slate-400 flex justify-center items-end pb-1 relative">
+                        <img id="print-signature-img" src="" class="max-h-16 hidden absolute bottom-0 object-contain" />
+                    </div>
+                    <p class="text-[11px] mt-1 font-bold text-slate-800 uppercase tracking-widest">Signature</p>
+                    <p class="text-[10px] mt-1 text-slate-600 font-medium" id="print-bottom-date"></p>
+                </div>
+                <!-- Right decorative shape removed -->
+            </div>
+        </div>
+
+        <div id="download-actions" class="hidden mt-8 flex justify-center no-print">
+            <button onclick="downloadPDF()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-transform transform hover:scale-105 flex items-center gap-2 text-lg">
+                <i class="fa-solid fa-download"></i> Download Print-Ready PDF
+            </button>
+        </div>
+    </div>
+
+</main>
+
+<!-- Signature Modal -->
+<div id="signature-modal" class="fixed inset-0 modal-backdrop z-50 hidden flex justify-center items-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col">
+        <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+            <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2"><i class="fa-solid fa-signature text-teal-600"></i> Doctor's Signature</h3>
+            <button onclick="closeSignatureModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-times text-xl"></i></button>
+        </div>
+        <div class="p-6">
+            <p class="text-sm text-slate-500 mb-2">Please sign in the box below:</p>
+            <canvas id="signature-pad" class="signature-canvas w-full h-48"></canvas>
+            <div class="flex justify-between mt-4">
+                <button onclick="clearSignature()" class="text-sm font-semibold text-red-500 hover:text-red-700 bg-red-50 px-4 py-2 rounded">Clear</button>
+                <button onclick="saveSignature()" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-6 rounded shadow-sm transition-colors">Done</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // State Management
+    let appState = {
+        doctor: {
+            name: '', regNo: '', field: 'General Physician', specialization: '',
+            degrees: [], otherDegree: '', phone: '', address: ''
+        },
+        patient: { name: '', age: '', sex: 'M', weight: '', address: '', date: '' },
+        clinical: { notes: [], advices: [] },
+        rx: [],
+        signatureDataUrl: null
+    };
+
+    // Initialization
+    window.onload = () => {
+        // Init dates
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('pat-date').value = today;
+        appState.patient.date = today;
+        
+        loadDoctorProfile();
+        initSignatureCanvas();
+        
+        // Add initial blank note, advice, rx
+        addNote();
+        addAdvice();
+        addMedicine();
+    };
+
+    function loadDoctorProfile() {
+        const saved = localStorage.getItem('doctorProfile');
+        if (saved) {
+            appState.doctor = JSON.parse(saved);
+            document.getElementById('nav-actions').classList.remove('hidden');
+            setScreen('screen-2');
+        } else {
+            setScreen('screen-1');
+        }
+    }
+
+    function saveDoctorProfile(e) {
+        e.preventDefault();
+        
+        appState.doctor.name = document.getElementById('doc-name').value;
+        appState.doctor.regNo = document.getElementById('doc-reg').value;
+        appState.doctor.field = document.getElementById('doc-field').value;
+        appState.doctor.specialization = document.getElementById('doc-spec').value;
+        appState.doctor.phone = document.getElementById('doc-phone').value;
+        appState.doctor.address = document.getElementById('doc-address').value;
+        
+        let degrees = [];
+        document.querySelectorAll('.doc-degree:checked').forEach(cb => {
+            degrees.push(cb.value);
+        });
+        appState.doctor.degrees = degrees;
+        appState.doctor.otherDegree = document.getElementById('doc-degree-other').value;
+        
+        localStorage.setItem('doctorProfile', JSON.stringify(appState.doctor));
+        document.getElementById('nav-actions').classList.remove('hidden');
+        setScreen('screen-2');
+    }
+
+    function logout() {
+        if(confirm("Are you sure you want to reset your profile? This will clear local storage.")) {
+            localStorage.removeItem('doctorProfile');
+            document.getElementById('nav-actions').classList.add('hidden');
+            // reset form
+            document.getElementById('doctor-form').reset();
+            toggleSpecialization();
+            toggleOtherDegree();
+            setScreen('screen-1');
+        }
+    }
+
+    function toggleSpecialization() {
+        const field = document.getElementById('doc-field').value;
+        const container = document.getElementById('doc-spec-container');
+        if (field === 'Specialist') {
+            container.classList.remove('hidden');
+            document.getElementById('doc-spec').required = true;
+        } else {
+            container.classList.add('hidden');
+            document.getElementById('doc-spec').required = false;
+        }
+    }
+
+    function toggleOtherDegree() {
+        const isChecked = document.getElementById('doc-degree-other-cb').checked;
+        const container = document.getElementById('doc-degree-other-container');
+        if (isChecked) {
+            container.classList.remove('hidden');
+        } else {
+            container.classList.add('hidden');
+        }
+    }
+
+    function setScreen(screenId) {
+        ['screen-1', 'screen-2', 'screen-3'].forEach(id => {
+            document.getElementById(id).classList.add('hidden');
+        });
+        document.getElementById(screenId).classList.remove('hidden');
+        window.scrollTo(0,0);
+    }
+
+    // --- Dynamic Lists (Notes, Advices) ---
+    function renderList(arrayName, containerId, inputCallback) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = '';
+        appState.clinical[arrayName].forEach((item, index) => {
+            container.innerHTML += `
+                <div class="flex items-center gap-2 mb-2 group">
+                    <span class="font-bold text-slate-400 w-5 text-right text-sm">${index + 1}.</span>
+                    <input type="text" value="${item.replace(/"/g, '&quot;')}" onchange="${inputCallback}(${index}, this.value)" 
+                           class="flex-grow border-b border-slate-300 focus:border-teal-500 outline-none p-1.5 bg-transparent text-sm transition-colors" placeholder="Type here...">
+                    <button onclick="removeItem('${arrayName}', ${index})" class="text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity p-1"><i class="fa-solid fa-circle-minus"></i></button>
+                </div>
+            `;
+        });
+    }
+
+    function addNote() {
+        appState.clinical.notes.push('');
+        renderList('notes', 'notes-list', 'updateNote');
+    }
+    function updateNote(index, val) { appState.clinical.notes[index] = val; }
+    
+    function addAdvice() {
+        appState.clinical.advices.push('');
+        renderList('advices', 'advices-list', 'updateAdvice');
+    }
+    function updateAdvice(index, val) { appState.clinical.advices[index] = val; }
+    
+    function removeItem(arrayName, index) {
+        appState.clinical[arrayName].splice(index, 1);
+        if (arrayName === 'notes') renderList('notes', 'notes-list', 'updateNote');
+        else renderList('advices', 'advices-list', 'updateAdvice');
+    }
+
+
+    // --- Medications Logic ---
+    function renderMedicines() {
+        const container = document.getElementById('medicines-list');
+        container.innerHTML = '';
+        appState.rx.forEach((med, index) => {
+            if (med.isEditing) {
+                container.innerHTML += `
+                    <div class="border border-teal-200 rounded-lg p-4 bg-teal-50 relative mb-4 shadow-sm">
+                        <div class="flex justify-between items-center mb-3">
+                            <h5 class="font-bold text-teal-800 text-sm">Medicine ${index + 1}</h5>
+                            <button onclick="removeMedicine(${index})" class="text-red-400 hover:text-red-600"><i class="fa-solid fa-times"></i></button>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Medicine Name</label>
+                                <input type="text" id="med-name-${index}" value="${med.name.replace(/"/g, '&quot;')}" class="w-full border border-slate-300 rounded p-2 focus:border-teal-500 outline-none font-semibold text-slate-800" placeholder="e.g. Tab. Augmentin 625">
+                            </div>
+                            <div class="flex gap-2">
+                                <div class="w-1/2">
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Dose</label>
+                                    <select id="med-dose-${index}" onchange="toggleMedOtherDose(${index})" class="w-full border border-slate-300 rounded p-2 focus:border-teal-500 outline-none bg-white">
+                                        <option value="1" ${med.dose==='1'?'selected':''}>1</option>
+                                        <option value="2" ${med.dose==='2'?'selected':''}>2</option>
+                                        <option value="1/2" ${med.dose==='1/2'?'selected':''}>1/2</option>
+                                        <option value="Other" ${med.dose==='Other'?'selected':''}>Other</option>
+                                    </select>
+                                </div>
+                                <div id="med-dose-other-container-${index}" class="${med.dose==='Other'?'':'hidden'} w-1/2">
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Custom</label>
+                                    <input type="number" id="med-dose-other-${index}" value="${med.doseOther}" class="w-full border border-slate-300 rounded p-2 focus:border-teal-500 outline-none" placeholder="e.g. 5">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Frequency</label>
+                                <select id="med-freq1-${index}" class="w-full border border-slate-300 rounded p-2 focus:border-teal-500 outline-none bg-white">
+                                    <option value="1-1-1" ${med.freq1==='1-1-1'?'selected':''}>1-1-1 (TDS)</option>
+                                    <option value="1-0-1" ${med.freq1==='1-0-1'?'selected':''}>1-0-1 (BD)</option>
+                                    <option value="1-0-0" ${med.freq1==='1-0-0'?'selected':''}>1-0-0 (OD Morning)</option>
+                                    <option value="0-0-1" ${med.freq1==='0-0-1'?'selected':''}>0-0-1 (OD Night)</option>
+                                    <option value="0-1-0" ${med.freq1==='0-1-0'?'selected':''}>0-1-0 (OD Noon)</option>
+                                    <option value="0-1-1" ${med.freq1==='0-1-1'?'selected':''}>0-1-1</option>
+                                    <option value="1-1-0" ${med.freq1==='1-1-0'?'selected':''}>1-1-0</option>
+                                    <option value="SOS" ${med.freq1==='SOS'?'selected':''}>SOS (As needed)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Timing</label>
+                                <select id="med-freq2-${index}" class="w-full border border-slate-300 rounded p-2 focus:border-teal-500 outline-none bg-white">
+                                    <option value="after food" ${med.freq2==='after food'?'selected':''}>after food (PC)</option>
+                                    <option value="before food" ${med.freq2==='before food'?'selected':''}>before food (AC)</option>
+                                    <option value="after breakfast" ${med.freq2==='after breakfast'?'selected':''}>after breakfast</option>
+                                    <option value="before breakfast" ${med.freq2==='before breakfast'?'selected':''}>before breakfast</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Duration (Days)</label>
+                                <div class="relative">
+                                    <input type="number" id="med-duration-${index}" value="${med.duration}" class="w-full border border-slate-300 rounded p-2 pr-12 focus:border-teal-500 outline-none" min="1">
+                                    <span class="absolute right-3 top-2 text-slate-400 text-sm">days</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Notes (Optional)</label>
+                            <input type="text" id="med-notes-${index}" value="${med.notes.replace(/"/g, '&quot;')}" class="w-full border border-slate-300 rounded p-2 focus:border-teal-500 outline-none" placeholder="e.g. Take with warm water">
+                        </div>
+                        <div class="flex justify-end gap-2">
+                            <button onclick="saveMedicine(${index})" class="px-5 py-2 bg-teal-600 text-white rounded-md hover:bg-teal-700 transition-colors text-sm font-bold shadow-sm flex items-center gap-2"><i class="fa-solid fa-check"></i> Save Medicine</button>
+                        </div>
+                    </div>
+                `;
+            } else {
+                let actualDose = med.dose === 'Other' ? med.doseOther : med.dose;
+                let medString = `<span class="font-bold text-slate-800 text-base">${med.name}</span> <span class="text-slate-600">- ${actualDose} tab</span> <span class="text-teal-700 font-semibold mx-1">&#x2022;</span> <span class="text-slate-700 font-medium">${med.freq1}</span> <span class="text-slate-500 text-xs">(${med.freq2})</span> <span class="text-teal-700 font-semibold mx-1">&#x2022;</span> <span class="font-medium text-slate-700">x ${med.duration} days</span>`;
+                if (med.notes) medString += ` <br><span class="text-xs text-slate-500 mt-1 inline-block italic"><i class="fa-solid fa-circle-info mr-1 text-teal-400"></i>${med.notes}</span>`;
+                
+                container.innerHTML += `
+                    <div class="border border-slate-200 rounded-lg p-3 bg-white flex justify-between items-center mb-3 shadow-[0_2px_4px_rgba(0,0,0,0.02)] hover:border-teal-300 transition-colors group">
+                        <div class="text-sm flex-grow">${medString}</div>
+                        <div class="flex gap-1 ml-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onclick="editMedicine(${index})" class="text-slate-400 hover:text-teal-600 p-2 rounded-full hover:bg-teal-50 transition-colors"><i class="fa-solid fa-pen-to-square"></i></button>
+                            <button onclick="removeMedicine(${index})" class="text-slate-400 hover:text-red-500 p-2 rounded-full hover:bg-red-50 transition-colors"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+    }
+
+    function addMedicine() {
+        appState.rx.push({
+            name: '', dose: '1', doseOther: '', freq1: '1-1-1', freq2: 'after food', duration: '5', notes: '', isEditing: true
+        });
+        renderMedicines();
+    }
+
+    function toggleMedOtherDose(index) {
+        const val = document.getElementById(`med-dose-${index}`).value;
+        const cont = document.getElementById(`med-dose-other-container-${index}`);
+        if(val === 'Other') cont.classList.remove('hidden');
+        else cont.classList.add('hidden');
+    }
+
+    function saveMedicine(index) {
+        const name = document.getElementById(`med-name-${index}`).value.trim();
+        if(!name) { alert('Medicine name is required'); return; }
+        
+        appState.rx[index] = {
+            name: name,
+            dose: document.getElementById(`med-dose-${index}`).value,
+            doseOther: document.getElementById(`med-dose-other-${index}`) ? document.getElementById(`med-dose-other-${index}`).value : '',
+            freq1: document.getElementById(`med-freq1-${index}`).value,
+            freq2: document.getElementById(`med-freq2-${index}`).value,
+            duration: document.getElementById(`med-duration-${index}`).value,
+            notes: document.getElementById(`med-notes-${index}`).value,
+            isEditing: false
+        };
+        renderMedicines();
+    }
+
+    function editMedicine(index) {
+        appState.rx[index].isEditing = true;
+        renderMedicines();
+    }
+
+    function removeMedicine(index) {
+        appState.rx.splice(index, 1);
+        renderMedicines();
+    }
+
+
+    // --- Preview Logic (Screen 3) ---
+    function goToPreview() {
+        // Collect Patient Data
+        appState.patient.name = document.getElementById('pat-name').value;
+        appState.patient.age = document.getElementById('pat-age').value;
+        appState.patient.sex = document.getElementById('pat-sex').value;
+        appState.patient.weight = document.getElementById('pat-weight').value;
+        appState.patient.address = document.getElementById('pat-address').value;
+        appState.patient.date = document.getElementById('pat-date').value;
+
+        if(!appState.patient.name || !appState.patient.age) {
+            alert("Patient Name and Age are required.");
+            window.scrollTo(0,0);
+            return;
+        }
+
+        populatePrintTemplate();
+        setScreen('screen-3');
+    }
+
+    function populatePrintTemplate() {
+        // Doctor
+        document.getElementById('print-doc-name').innerText = appState.doctor.name;
+        document.getElementById('print-doc-field').innerText = appState.doctor.field === 'Specialist' ? appState.doctor.specialization : appState.doctor.field;
+        
+        let degString = appState.doctor.degrees.join(', ');
+        if(appState.doctor.otherDegree) degString += (degString?', ':'') + appState.doctor.otherDegree;
+        document.getElementById('print-doc-degrees').innerText = degString;
+        
+        document.getElementById('print-doc-reg').innerText = appState.doctor.regNo;
+        document.getElementById('print-doc-phone').innerText = appState.doctor.phone;
+        document.getElementById('print-doc-address').innerText = appState.doctor.address;
+
+        // Patient
+        // Format Date
+        let dateParts = appState.patient.date.split('-');
+        let displayDate = dateParts.length === 3 ? `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}` : appState.patient.date;
+        
+        document.getElementById('print-top-date').innerText = displayDate;
+        document.getElementById('print-bottom-date').innerText = displayDate;
+        
+        document.getElementById('print-pat-name').innerText = appState.patient.name;
+        document.getElementById('print-pat-age').innerText = appState.patient.age;
+        document.getElementById('print-pat-sex').innerText = appState.patient.sex;
+        document.getElementById('print-pat-weight').innerText = appState.patient.weight;
+        document.getElementById('print-pat-address').innerText = appState.patient.address;
+
+        // Left Column Data
+        let symptoms = document.getElementById('clin-symptoms').value.trim();
+        if(symptoms) {
+            document.getElementById('print-symptoms').innerText = symptoms;
+            document.getElementById('print-symptoms-section').classList.remove('hidden');
+        } else {
+            document.getElementById('print-symptoms-section').classList.add('hidden');
+        }
+
+        // Vitals
+        let bpSys = document.getElementById('vital-bp-sys').value;
+        let bpDia = document.getElementById('vital-bp-dia').value;
+        let pr = document.getElementById('vital-pr').value;
+        let spo2 = document.getElementById('vital-spo2').value;
+        let otherVit = document.getElementById('vital-other').value.trim();
+        
+        let vitalsList = document.getElementById('print-vitals-list');
+        vitalsList.innerHTML = '';
+        let hasVitals = false;
+        if(bpSys && bpDia) { vitalsList.innerHTML += `<li>BP - ${bpSys}/${bpDia} mmHg</li>`; hasVitals = true; }
+        if(pr) { vitalsList.innerHTML += `<li>PR - ${pr} bpm</li>`; hasVitals = true; }
+        if(spo2) { vitalsList.innerHTML += `<li>SpO2 - ${spo2}%</li>`; hasVitals = true; }
+        
+        document.getElementById('print-vitals-other').innerText = otherVit;
+        if(otherVit) hasVitals = true;
+
+        if(hasVitals) document.getElementById('print-oe-section').classList.remove('hidden');
+        else document.getElementById('print-oe-section').classList.add('hidden');
+
+        // Clinical Notes
+        let notesList = document.getElementById('print-notes-list');
+        notesList.innerHTML = '';
+        let validNotes = appState.clinical.notes.filter(n => n.trim() !== '');
+        if(validNotes.length > 0) {
+            validNotes.forEach(n => {
+                notesList.innerHTML += `<li>${n}</li>`;
+            });
+            document.getElementById('print-notes-section').classList.remove('hidden');
+        } else {
+            document.getElementById('print-notes-section').classList.add('hidden');
+        }
+
+        // Investigations
+        let inves = document.getElementById('clin-investigations').value.trim();
+        if(inves) {
+            document.getElementById('print-investigations').innerText = inves;
+            document.getElementById('print-investigations-section').classList.remove('hidden');
+        } else {
+            document.getElementById('print-investigations-section').classList.add('hidden');
+        }
+
+        // Medicines
+        let printRxList = document.getElementById('print-medicines-list');
+        printRxList.innerHTML = '';
+        appState.rx.forEach(med => {
+            if(med.isEditing || !med.name) return; // skip empty/unsaved
+            
+            let actualDose = med.dose === 'Other' ? med.doseOther : med.dose;
+            
+            let notesHtml = '';
+            if(med.notes) notesHtml = `<div class="text-[11px] text-slate-500 italic mt-0.5">${med.notes}</div>`;
+            
+            printRxList.innerHTML += `
+                <tr class="border-b border-slate-100 last:border-0 align-top">
+                    <td class="py-2 pr-2">
+                        <div class="font-bold text-[14px] text-slate-800">${med.name}</div>
+                        ${notesHtml}
+                    </td>
+                    <td class="py-2 pr-2 font-medium">${actualDose} tab</td>
+                    <td class="py-2 pr-2">
+                        <span class="font-semibold">${med.freq1}</span><br>
+                        <span class="text-[11px] text-slate-600">${med.freq2}</span>
+                    </td>
+                    <td class="py-2 font-semibold">${med.duration}</td>
+                </tr>
+            `;
+        });
+
+        // Advices
+        let pAdvicesList = document.getElementById('print-advices-list');
+        pAdvicesList.innerHTML = '';
+        let validAdvices = appState.clinical.advices.filter(a => a.trim() !== '');
+        if(validAdvices.length > 0) {
+            validAdvices.forEach(a => {
+                pAdvicesList.innerHTML += `<li>${a}</li>`;
+            });
+            document.getElementById('print-advices-section').classList.remove('hidden');
+        } else {
+            document.getElementById('print-advices-section').classList.add('hidden');
+        }
+
+        // Follow Up
+        let fDate = document.getElementById('follow-date').value;
+        if(fDate) {
+            let fdParts = fDate.split('-');
+            let fDisplay = fdParts.length === 3 ? `${fdParts[2]}/${fdParts[1]}/${fdParts[0]}` : fDate;
+            document.getElementById('print-followup').innerText = fDisplay;
+            document.getElementById('print-followup-section').classList.remove('hidden');
+        } else {
+            document.getElementById('print-followup-section').classList.add('hidden');
+        }
+        
+        // Reset signature if not drawn
+        if(!appState.signatureDataUrl) {
+            document.getElementById('print-signature-img').classList.add('hidden');
+        }
+    }
+
+
+    // --- Signature Pad Logic ---
+    let canvas, ctx;
+    let isDrawing = false;
+    
+    function initSignatureCanvas() {
+        canvas = document.getElementById('signature-pad');
+        ctx = canvas.getContext('2d');
+        
+        // Set canvas internal dimensions to match display size for correct coordinate mapping
+        const rect = canvas.getBoundingClientRect();
+        // Fallback dimensions if modal is hidden during init
+        canvas.width = rect.width || 450; 
+        canvas.height = rect.height || 192;
+        
+        ctx.lineWidth = 2.5;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.strokeStyle = '#0f172a'; // dark slate
+        
+        // Mouse Events
+        canvas.addEventListener('mousedown', startPosition);
+        canvas.addEventListener('mouseup', endPosition);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseout', endPosition);
+        
+        // Touch Events
+        canvas.addEventListener('touchstart', startPositionTouch, {passive: false});
+        canvas.addEventListener('touchend', endPosition, {passive: false});
+        canvas.addEventListener('touchmove', drawTouch, {passive: false});
+    }
+    
+    // Resize function to call when modal opens to ensure exact matching
+    function resizeCanvas() {
+        const rect = canvas.parentElement.getBoundingClientRect();
+        // save content
+        const data = canvas.toDataURL();
+        canvas.width = rect.width - 48; // padding adj
+        canvas.height = 192; // h-48
+        ctx.lineWidth = 2.5;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.strokeStyle = '#0f172a';
+        
+        if(appState.signatureDataUrl) {
+            let img = new Image();
+            img.onload = () => ctx.drawImage(img, 0, 0);
+            img.src = appState.signatureDataUrl;
+        }
+    }
+
+    function startPosition(e) { isDrawing = true; draw(e); }
+    function endPosition() { isDrawing = false; ctx.beginPath(); }
+    
+    function draw(e) {
+        if (!isDrawing) return;
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        ctx.lineTo(x, y);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+    }
+
+    function startPositionTouch(e) {
+        e.preventDefault();
+        isDrawing = true;
+        drawTouch(e);
+    }
+    function drawTouch(e) {
+        if (!isDrawing) return;
+        e.preventDefault();
+        const rect = canvas.getBoundingClientRect();
+        const touch = e.touches[0];
+        const x = touch.clientX - rect.left;
+        const y = touch.clientY - rect.top;
+        ctx.lineTo(x, y);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+    }
+
+    function openSignatureModal() {
+        document.getElementById('signature-modal').classList.remove('hidden');
+        // Small delay to allow CSS render before resize calculation
+        setTimeout(resizeCanvas, 50);
+    }
+
+    function closeSignatureModal() {
+        document.getElementById('signature-modal').classList.add('hidden');
+    }
+
+    function clearSignature() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        appState.signatureDataUrl = null;
+        document.getElementById('print-signature-img').classList.add('hidden');
+    }
+
+    function saveSignature() {
+        appState.signatureDataUrl = canvas.toDataURL('image/png');
+        const imgEl = document.getElementById('print-signature-img');
+        imgEl.src = appState.signatureDataUrl;
+        imgEl.classList.remove('hidden');
+        closeSignatureModal();
+        
+        // Show download button once signed
+        document.getElementById('download-actions').classList.remove('hidden');
+    }
+
+
+    // --- PDF Export ---
+    function downloadPDF() {
+        const element = document.getElementById('prescription-print');
+        
+        // Hide download button visually but it's outside a4-container anyway
+        const patientName = appState.patient.name.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'patient';
+        
+        const opt = {
+            margin:       0,
+            filename:     `Prescription_${patientName}.pdf`,
+            image:        { type: 'jpeg', quality: 1 },
+            html2canvas:  { scale: 2, useCORS: true, logging: false, scrollY: 0 },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+        
+        // Hide scrollbars temporarily to avoid capturing them
+        document.body.style.overflow = 'hidden';
+        const noPrintEls = document.querySelectorAll('.no-print');
+        noPrintEls.forEach(el => el.style.display = 'none');
+        
+        html2pdf().set(opt).from(element).save().then(() => {
+            document.body.style.overflow = '';
+            noPrintEls.forEach(el => el.style.display = '');
+        });
+    }
+
+</script>
+</body>
+</html>
