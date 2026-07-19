@@ -62,6 +62,15 @@
             .no-print { display: none !important; }
             .a4-container { box-shadow: none; margin: 0; width: 210mm; height: 296mm; }
         }
+        
+        /* Hide scrollbar securely in the wrapper while retaining scroll functionality */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
 
         /* Template Specifics */
         .bg-coral { background-color: #f87171; }
@@ -173,15 +182,15 @@
 <body class="text-slate-800 antialiased min-h-screen flex flex-col">
 
 <!-- Navbar -->
-<nav class="bg-white shadow-sm border-b border-slate-200 px-6 py-4 flex justify-between items-center no-print">
+<nav class="bg-white shadow-sm border-b border-slate-200 px-4 md:px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 no-print w-full">
     <div class="flex items-center gap-3">
         <div class="bg-teal-600 text-white p-2 rounded-lg">
             <i class="fa-solid fa-file-medical text-xl"></i>
         </div>
         <h1 class="text-xl font-bold text-slate-800 tracking-tight">RxGenerator by Swaraj</h1>
     </div>
-    <div id="nav-actions" class="hidden">
-        <button onclick="logout()" class="text-sm font-medium text-slate-500 hover:text-red-500 transition-colors flex items-center gap-1 bg-slate-100 hover:bg-red-50 px-3 py-1.5 rounded-md">
+    <div id="nav-actions" class="hidden w-full sm:w-auto">
+        <button onclick="logout()" class="w-full sm:w-auto justify-center text-sm font-medium text-slate-500 hover:text-red-500 transition-colors flex items-center gap-2 bg-slate-100 hover:bg-red-50 px-4 py-2 rounded-md">
             <i class="fa-solid fa-sign-out-alt"></i> Reset Profile
         </button>
     </div>
@@ -420,15 +429,16 @@
     <!-- ==================== SCREEN 3: PREVIEW & SIGNATURE ==================== -->
     <div id="screen-3" class="hidden pb-10">
         
-        <div class="max-w-[210mm] mx-auto mb-6 bg-white p-4 rounded-xl shadow-sm border border-slate-200 no-print flex flex-col md:flex-row justify-between items-center gap-4">
-            <div class="flex items-center gap-4">
-                <button onclick="setScreen('screen-2')" class="text-slate-600 hover:text-slate-800 font-semibold flex items-center gap-2 bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-lg transition-colors">
+        <!-- Responsive Control Bar -->
+        <div class="max-w-[210mm] mx-auto mb-6 bg-white p-4 rounded-xl shadow-sm border border-slate-200 no-print flex flex-col gap-4 w-full sm:flex-row sm:items-center sm:justify-between">
+            <div class="flex flex-col gap-2 w-full sm:flex-row sm:w-auto sm:items-center">
+                <button onclick="setScreen('screen-2')" class="w-full sm:w-auto justify-center text-slate-600 hover:text-slate-800 font-semibold flex items-center gap-2 bg-slate-100 hover:bg-slate-200 px-4 py-2.5 rounded-lg transition-colors">
                     <i class="fa-solid fa-arrow-left"></i> Edit Form
                 </button>
-                <div class="h-8 w-px bg-slate-300"></div>
-                <div class="flex items-center gap-2">
-                    <label class="text-sm font-bold text-slate-700">Template:</label>
-                    <select id="template-selector" onchange="changeTemplate(this.value)" class="border border-slate-300 rounded-lg p-2 focus:border-teal-500 outline-none text-sm font-medium bg-slate-50 cursor-pointer">
+                <div class="hidden sm:block h-8 w-px bg-slate-300 mx-2"></div>
+                <div class="flex flex-col gap-1 w-full sm:flex-row sm:w-auto sm:items-center sm:gap-3 mt-2 sm:mt-0">
+                    <label class="text-sm font-bold text-slate-700 whitespace-nowrap">Template:</label>
+                    <select id="template-selector" onchange="changeTemplate(this.value)" class="w-full sm:w-auto border border-slate-300 rounded-lg p-2.5 focus:border-teal-500 outline-none text-sm font-medium bg-slate-50 cursor-pointer">
                         <option value="original">Template 1: Standard Comprehensive</option>
                         <option value="modern">Template 2: Modern Teal</option>
                         <option value="classic">Template 3: Executive Classic</option>
@@ -437,19 +447,23 @@
                     </select>
                 </div>
             </div>
-            <button onclick="openSignatureModal()" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-6 rounded-lg shadow-sm transition-colors flex items-center gap-2">
+            <button onclick="openSignatureModal()" class="w-full sm:w-auto justify-center bg-teal-600 hover:bg-teal-700 text-white font-bold py-2.5 px-6 rounded-lg shadow-sm transition-colors flex items-center gap-2">
                 <i class="fa-solid fa-pen-nib"></i> Confirm & Sign
             </button>
         </div>
 
-        <!-- A4 Print Container -->
-        <div class="a4-container" id="prescription-print">
-            <!-- Dynamic Template Content -->
-        </div>
+        <!-- Print Preview Wrapper -->
+        <div class="w-full overflow-x-auto flex justify-start sm:justify-center p-2 no-scrollbar pb-6">
+            <div class="min-w-max origin-top-left transform scale-[0.85] sm:scale-100 transition-transform">
+                <!-- A4 Print Container -->
+                <div class="a4-container shrink-0" id="prescription-print">
+                    <!-- Dynamic Template Content -->
+                </div>
+            </div>
         </div>
 
-        <div id="download-actions" class="hidden mt-8 flex justify-center no-print">
-            <button onclick="downloadPDF()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-transform transform hover:scale-105 flex items-center gap-2 text-lg">
+        <div id="download-actions" class="hidden mt-4 flex justify-center no-print w-full px-4">
+            <button onclick="downloadPDF()" class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-transform transform hover:scale-105 flex items-center justify-center gap-2 text-lg">
                 <i class="fa-solid fa-download"></i> Download Print-Ready PDF
             </button>
         </div>
@@ -912,9 +926,9 @@
         if(appState.template === 'original') {
             html = `
                 <div class="relative h-[220px] overflow-hidden bg-white">
-                    <div class="absolute top-0 right-0 w-[65%] h-[180px] bg-red-400 rounded-bl-full z-0"></div>
-                    <div class="absolute top-[-50px] left-[-50px] w-[300px] h-[300px] bg-cyan-200 rounded-full z-0"></div>
-                    <div class="absolute top-[130px] left-[50px] w-[120px] h-[120px] bg-red-400 rounded-full z-10 flex justify-center items-center text-white text-[3rem]">
+                    <div class="absolute top-0 right-0 w-[65%] h-[180px] bg-slate-800 rounded-bl-full z-0"></div>
+                    <div class="absolute top-[-50px] left-[-50px] w-[300px] h-[300px] bg-slate-200 rounded-full z-0"></div>
+                    <div class="absolute top-[130px] left-[50px] w-[120px] h-[120px] bg-slate-800 rounded-full z-10 flex justify-center items-center text-white text-[3rem]">
                         <i class="fa-solid fa-user-doctor drop-shadow-md opacity-90"></i>
                     </div>
                     <div class="relative z-20 flex justify-between pt-8 px-10">
@@ -955,9 +969,9 @@
                         ${rightColHtml}
                     </div>
                 </div>
-                <div class="absolute bottom-0 w-full px-10 py-5 flex justify-between items-end border-t-[8px] border-red-400 bg-white pb-8">
+                <div class="absolute bottom-0 w-full px-10 py-5 flex justify-between items-end border-t-[8px] border-slate-800 bg-white pb-8">
                     <div class="flex items-center gap-3 w-3/5">
-                        <div class="bg-red-100 rounded-full w-8 h-8 flex justify-center items-center text-red-400 flex-shrink-0">
+                        <div class="bg-slate-200 rounded-full w-8 h-8 flex justify-center items-center text-slate-800 flex-shrink-0">
                             <i class="fa-solid fa-plus font-bold text-sm"></i>
                         </div>
                         <div>
@@ -1163,7 +1177,7 @@
                     </div>
                     <div class="text-right">
                         <p class="text-[11px] font-bold text-slate-600"><i class="fa-solid fa-phone mr-1"></i>${docPhone}</p>
-                        <p class="text-[10px] text-slate-500 max-w-[200px] truncate mt-0.5">${docAddress.replace(/\\n/g, ', ')}</p>
+                        <p class="text-[10px] text-slate-500 max-w-[200px] truncate mt-0.5">${docAddress.replace(/\n/g, ', ')}</p>
                     </div>
                 </div>
                 <div class="px-8 py-2 border-b border-slate-200 bg-slate-50 flex items-center justify-between text-[11px] font-medium uppercase tracking-wider text-slate-600">
