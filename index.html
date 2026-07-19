@@ -234,28 +234,37 @@
                 </div>
                 
                 <div>
-                    <label class="block text-sm font-semibold text-slate-700 mb-2">Degrees</label>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Degree(s)<span class="text-xs font-normal text-slate-400 ml-1">[optional]</span></label>
                     <div class="flex flex-wrap gap-4">
                         <label class="flex items-center gap-2 cursor-pointer">
                             <input type="checkbox" value="M.B.B.S." class="doc-degree form-checkbox text-teal-600">
                             <span class="text-sm text-slate-700">M.B.B.S.</span>
                         </label>
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="checkbox" value="M.D." class="doc-degree form-checkbox text-teal-600">
-                            <span class="text-sm text-slate-700">M.D.</span>
-                        </label>
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="checkbox" value="D.M." class="doc-degree form-checkbox text-teal-600">
-                            <span class="text-sm text-slate-700">D.M.</span>
-                        </label>
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            <label class="flex items-center gap-2 cursor-pointer select-none">
+                                <input type="checkbox" value="M.D." id="cb-md" onchange="toggleMajorInput('cb-md', 'major-md')" class="doc-degree form-checkbox text-teal-600">
+                                <span class="text-sm text-slate-700">M.D.</span>
+                            </label>
+                            <input type="text" id="major-md" placeholder="(Major) [optional]" class="hidden border border-slate-300 rounded px-2 py-0.5 text-xs min-w-[130px] max-w-[160px] outline-none focus:border-teal-500 placeholder-slate-400">
+                        </div>
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            <label class="flex items-center gap-2 cursor-pointer select-none">
+                                <input type="checkbox" value="D.M." id="cb-dm" onchange="toggleMajorInput('cb-dm', 'major-dm')" class="doc-degree form-checkbox text-teal-600">
+                                <span class="text-sm text-slate-700">D.M.</span>
+                            </label>
+                            <input type="text" id="major-dm" placeholder="(Major) [optional]" class="hidden border border-slate-300 rounded px-2 py-0.5 text-xs min-w-[130px] max-w-[160px] outline-none focus:border-teal-500 placeholder-slate-400">
+                        </div>
                         <label class="flex items-center gap-2 cursor-pointer">
                             <input type="checkbox" value="B.D.S." class="doc-degree form-checkbox text-teal-600">
                             <span class="text-sm text-slate-700">B.D.S.</span>
                         </label>
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="checkbox" value="M.D.S." class="doc-degree form-checkbox text-teal-600">
-                            <span class="text-sm text-slate-700">M.D.S.</span>
-                        </label>
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            <label class="flex items-center gap-2 cursor-pointer select-none">
+                                <input type="checkbox" value="M.D.S." id="cb-mds" onchange="toggleMajorInput('cb-mds', 'major-mds')" class="doc-degree form-checkbox text-teal-600">
+                                <span class="text-sm text-slate-700">M.D.S.</span>
+                            </label>
+                            <input type="text" id="major-mds" placeholder="(Major) [optional]" class="hidden border border-slate-300 rounded px-2 py-0.5 text-xs min-w-[130px] max-w-[160px] outline-none focus:border-teal-500 placeholder-slate-400">
+                        </div>
                         <label class="flex items-center gap-2 cursor-pointer">
                             <input type="checkbox" value="Other" id="doc-degree-other-cb" onchange="toggleOtherDegree()" class="doc-degree form-checkbox text-teal-600">
                             <span class="text-sm text-slate-700">Other (to be displayed on prescription letterhead)</span>
@@ -268,17 +277,17 @@
                 </div>
 
                 <div>
-                    <label class="block text-sm font-semibold text-slate-700 mb-1">Miscellaneous / Additional Header Info to be Displayed on Prescription Letterhead</label>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Miscellaneous / Additional Header Info to be Displayed on Prescription Letterhead<span class="text-xs font-normal text-slate-400 ml-1">[optional]</span></label>
                     <input type="text" id="doc-misc" placeholder="e.g. Consultant at Apex Hospital / Special Interest in Cardiology" class="w-full border border-slate-300 rounded-md p-2.5 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all">
                 </div>
                 
                 <div>
-                    <label class="block text-sm font-semibold text-slate-700 mb-1">Phone No.</label>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Phone No.<span class="text-xs font-normal text-slate-400 ml-1">[optional]</span></label>
                     <input type="text" id="doc-phone" placeholder="e.g. +91 1234567890" class="w-full border border-slate-300 rounded-md p-2.5 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all">
                 </div>
                 
                 <div>
-                    <label class="block text-sm font-semibold text-slate-700 mb-1">Clinic Address</label>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Clinic Address<span class="text-xs font-normal text-slate-400 ml-1">[optional]</span></label>
                     <textarea id="doc-address" rows="2" placeholder="e.g. Bankura, West Bengal, India" class="w-full border border-slate-300 rounded-md p-2.5 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all"></textarea>
                 </div>
                 
@@ -521,7 +530,8 @@
         template: sessionStorage.getItem('selectedTemplate') || 'original',
         doctor: {
             name: '', regNo: '', field: 'General Physician', specialization: '',
-            degrees: [], otherDegree: '', miscInfo: '', phone: '', address: ''
+            degrees: [], otherDegree: '', miscInfo: '', phone: '', address: '',
+            degreeMajors: { "M.D.": "", "D.M.": "", "M.D.S.": "" }
         },
         patient: { name: '', age: '', sex: 'M', weight: '', address: '', date: '' },
         clinical: { notes: [], advices: [] },
@@ -616,6 +626,22 @@
             navActions.classList.add('flex');
             updateDoctorGreeting();
             if(appState.doctor.miscInfo) document.getElementById('doc-misc').value = appState.doctor.miscInfo;
+            if(appState.doctor.degreeMajors) {
+                document.getElementById('major-md').value = appState.doctor.degreeMajors["M.D."] || '';
+                document.getElementById('major-dm').value = appState.doctor.degreeMajors["D.M."] || '';
+                document.getElementById('major-mds').value = appState.doctor.degreeMajors["M.D.S."] || '';
+            }
+            
+            // Automatically toggle visibility based on stored state
+            ['M.D.', 'D.M.', 'M.D.S.'].forEach(deg => {
+                document.querySelectorAll('.doc-degree').forEach(cb => {
+                    if (cb.value === deg && cb.checked) {
+                        const mapping = { 'M.D.': 'major-md', 'D.M.': 'major-dm', 'M.D.S.': 'major-mds' };
+                        document.getElementById(mapping[deg]).classList.remove('hidden');
+                    }
+                });
+            });
+            
             setScreen('screen-2');
         } else {
             setScreen('screen-1');
@@ -639,6 +665,11 @@
         appState.doctor.degrees = degrees;
         appState.doctor.otherDegree = document.getElementById('doc-degree-other').value;
         appState.doctor.miscInfo = document.getElementById('doc-misc').value;
+        appState.doctor.degreeMajors = {
+            "M.D.": document.getElementById('major-md').value.trim(),
+            "D.M.": document.getElementById('major-dm').value.trim(),
+            "M.D.S.": document.getElementById('major-mds').value.trim()
+        };
         
         localStorage.setItem('doctorProfile', JSON.stringify(appState.doctor));
         const navActions = document.getElementById('nav-actions');
@@ -681,6 +712,19 @@
             container.classList.remove('hidden');
         } else {
             container.classList.add('hidden');
+        }
+    }
+
+    function toggleMajorInput(checkboxId, inputId) {
+        const cb = document.getElementById(checkboxId);
+        const input = document.getElementById(inputId);
+        if (cb && input) {
+            if (cb.checked) {
+                input.classList.remove('hidden');
+            } else {
+                input.classList.add('hidden');
+                input.value = ''; // Clean field state if unselected
+            }
         }
     }
 
@@ -893,7 +937,15 @@
         // Common Data Prep
         const docName = appState.doctor.name;
         const docField = appState.doctor.field === 'Specialist' ? appState.doctor.specialization : appState.doctor.field;
-        let degString = appState.doctor.degrees.filter(d => d !== 'Other').join(', ');
+        let baseDegrees = appState.doctor.degrees.filter(deg => deg !== 'Other');
+        let formattedDegrees = baseDegrees.map(deg => {
+            let major = appState.doctor.degreeMajors && appState.doctor.degreeMajors[deg];
+            if (major && major.trim() !== '') {
+                return `${deg} (${major.trim()})`;
+            }
+            return deg;
+        });
+        let degString = formattedDegrees.join(', ');
         if(appState.doctor.otherDegree) degString += (degString?', ':'') + appState.doctor.otherDegree;
         const docMisc = appState.doctor.miscInfo ? appState.doctor.miscInfo.trim() : '';
         const miscHtml = docMisc ? `<p class="text-[11px] opacity-90 mt-0.5 italic tracking-wide">${docMisc}</p>` : '';
