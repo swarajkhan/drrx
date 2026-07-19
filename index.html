@@ -229,7 +229,7 @@
                 </div>
                 
                 <div id="doc-spec-container" class="hidden">
-                    <label class="block text-sm font-semibold text-slate-700 mb-1">Specialization <span class="text-red-500">*</span></label>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Specialization (to be displayed on prescription letterhead)<span class="text-red-500">*</span></label>
                     <input type="text" id="doc-spec" placeholder="e.g. Cardiologist" class="w-full border border-slate-300 rounded-md p-2.5 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all">
                 </div>
                 
@@ -265,6 +265,11 @@
                 
                 <div id="doc-degree-other-container" class="hidden">
                     <input type="text" id="doc-degree-other" placeholder="Specify other degrees" class="w-full border border-slate-300 rounded-md p-2.5 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Miscellaneous / Additional Header Info to be Displayed on Prescription Letterhead</label>
+                    <input type="text" id="doc-misc" placeholder="e.g. Consultant at Apex Hospital / Special Interest in Cardiology" class="w-full border border-slate-300 rounded-md p-2.5 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all">
                 </div>
                 
                 <div>
@@ -516,7 +521,7 @@
         template: sessionStorage.getItem('selectedTemplate') || 'original',
         doctor: {
             name: '', regNo: '', field: 'General Physician', specialization: '',
-            degrees: [], otherDegree: '', phone: '', address: ''
+            degrees: [], otherDegree: '', miscInfo: '', phone: '', address: ''
         },
         patient: { name: '', age: '', sex: 'M', weight: '', address: '', date: '' },
         clinical: { notes: [], advices: [] },
@@ -610,6 +615,7 @@
             navActions.classList.remove('hidden');
             navActions.classList.add('flex');
             updateDoctorGreeting();
+            if(appState.doctor.miscInfo) document.getElementById('doc-misc').value = appState.doctor.miscInfo;
             setScreen('screen-2');
         } else {
             setScreen('screen-1');
@@ -632,6 +638,7 @@
         });
         appState.doctor.degrees = degrees;
         appState.doctor.otherDegree = document.getElementById('doc-degree-other').value;
+        appState.doctor.miscInfo = document.getElementById('doc-misc').value;
         
         localStorage.setItem('doctorProfile', JSON.stringify(appState.doctor));
         const navActions = document.getElementById('nav-actions');
@@ -886,8 +893,11 @@
         // Common Data Prep
         const docName = appState.doctor.name;
         const docField = appState.doctor.field === 'Specialist' ? appState.doctor.specialization : appState.doctor.field;
-        let degString = appState.doctor.degrees.join(', ');
+        let degString = appState.doctor.degrees.filter(d => d !== 'Other').join(', ');
         if(appState.doctor.otherDegree) degString += (degString?', ':'') + appState.doctor.otherDegree;
+        const docMisc = appState.doctor.miscInfo ? appState.doctor.miscInfo.trim() : '';
+        const miscHtml = docMisc ? `<p class="text-[11px] opacity-90 mt-0.5 italic tracking-wide">${docMisc}</p>` : '';
+        const miscHtmlAlt = docMisc ? `<p class="text-[11px] text-slate-500 mt-0.5 italic tracking-wide">${docMisc}</p>` : '';
         const docReg = appState.doctor.regNo;
         const docPhone = appState.doctor.phone;
         const docAddress = appState.doctor.address;
@@ -1022,6 +1032,7 @@
                             <h1 class="text-3xl font-serif font-bold mb-2 tracking-wide">${docName}</h1>
                             <p class="text-sm opacity-90 tracking-wide">${docField}</p>
                             <p class="text-[13px] font-semibold opacity-90 mt-1">${degString}</p>
+                            ${miscHtml}
                             <p class="text-[12px] opacity-80 mt-1">Reg. no.- ${docReg}</p>
                         </div>
                     </div>
@@ -1088,6 +1099,7 @@
                             <h1 class="text-3xl font-serif font-bold mb-2 tracking-wide">${docName}</h1>
                             <p class="text-sm opacity-90 tracking-wide">${docField}</p>
                             <p class="text-[13px] font-semibold opacity-90 mt-1">${degString}</p>
+                            ${miscHtml}
                             <p class="text-[12px] opacity-80 mt-1">Reg. no.- ${docReg}</p>
                         </div>
                     </div>
@@ -1151,6 +1163,7 @@
                             <h1 class="text-4xl font-extrabold text-[#4338ca] mb-1 tracking-tight">${docName}</h1>
                             <p class="text-[16px] font-bold text-slate-700 tracking-wide">${docField}</p>
                             <p class="text-[13px] font-semibold text-slate-600 mt-1">${degString}</p>
+                            ${miscHtmlAlt}
                         </div>
                         <div class="flex-shrink-0 bg-white p-3 rounded-xl shadow-sm border border-[#c7d2fe] text-center min-w-[120px]">
                             <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-0.5">Registration</p>
@@ -1210,6 +1223,7 @@
                         <h1 class="text-2xl font-bold text-[#374151] uppercase tracking-tight leading-none mb-1">${docName}</h1>
                         <p class="text-[12px] font-bold text-slate-600 uppercase tracking-widest">${docField}</p>
                         <p class="text-[11px] font-medium text-slate-500 mt-0.5">${degString} | Reg: ${docReg}</p>
+                        ${miscHtmlAlt}
                     </div>
                     <div class="text-right">
                         <p class="text-[11px] font-bold text-slate-600"><i class="fa-solid fa-phone mr-1"></i>${docPhone}</p>
@@ -1246,6 +1260,7 @@
                     <h1 class="text-4xl font-serif font-bold text-[#1e293b] tracking-wider mb-2 uppercase">${docName}</h1>
                     <p class="text-[15px] font-serif font-semibold text-slate-700 tracking-widest uppercase mb-1">${docField}</p>
                     <p class="text-[13px] font-serif text-slate-600 mb-1">${degString}</p>
+                    ${miscHtmlAlt}
                     <p class="text-[12px] font-serif text-slate-500">Reg: ${docReg}</p>
                 </div>
                 <div class="px-12 py-4 flex justify-between items-end">
