@@ -62,15 +62,6 @@
             .no-print { display: none !important; }
             .a4-container { box-shadow: none; margin: 0; width: 210mm; height: 296mm; }
         }
-        
-        /* Hide scrollbar securely in the wrapper while retaining scroll functionality */
-        .no-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
-        .no-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
 
         /* Template Specifics */
         .bg-coral { background-color: #f87171; }
@@ -222,6 +213,7 @@
                     <label class="block text-sm font-semibold text-slate-700 mb-1">Field <span class="text-red-500">*</span></label>
                     <select id="doc-field" required onchange="toggleSpecialization()" class="w-full border border-slate-300 rounded-md p-2.5 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all">
                         <option value="General Physician">General Physician</option>
+                        <option value="General Dentist">General Dentist</option>
                         <option value="Specialist">Specialist</option>
                     </select>
                 </div>
@@ -245,6 +237,14 @@
                         <label class="flex items-center gap-2 cursor-pointer">
                             <input type="checkbox" value="D.M." class="doc-degree form-checkbox text-teal-600">
                             <span class="text-sm text-slate-700">D.M.</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" value="B.D.S." class="doc-degree form-checkbox text-teal-600">
+                            <span class="text-sm text-slate-700">B.D.S.</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" value="M.D.S." class="doc-degree form-checkbox text-teal-600">
+                            <span class="text-sm text-slate-700">M.D.S.</span>
                         </label>
                         <label class="flex items-center gap-2 cursor-pointer">
                             <input type="checkbox" value="Other" id="doc-degree-other-cb" onchange="toggleOtherDegree()" class="doc-degree form-checkbox text-teal-600">
@@ -441,9 +441,9 @@
                     <select id="template-selector" onchange="changeTemplate(this.value)" class="w-full sm:w-auto border border-slate-300 rounded-lg p-2.5 focus:border-teal-500 outline-none text-sm font-medium bg-slate-50 cursor-pointer">
                         <option value="original">Template 1: Standard Comprehensive</option>
                         <option value="modern">Template 2: Modern Teal</option>
-                        <option value="classic">Template 3: Executive Classic</option>
-                        <option value="editorial">Template 4: Editorial Vibrant</option>
-                        <option value="compact">Template 5: Compact Clean</option>
+                        <option value="editorial">Template 3: Editorial Vibrant</option>
+                        <option value="compact">Template 4: Compact Clean</option>
+                        <option value="classic">Template 5: Executive Classic</option>
                     </select>
                 </div>
             </div>
@@ -452,11 +452,11 @@
             </button>
         </div>
 
-        <!-- Print Preview Wrapper -->
-        <div class="w-full overflow-x-auto flex justify-start sm:justify-center p-2 no-scrollbar pb-6">
-            <div class="min-w-max origin-top-left transform scale-[0.85] sm:scale-100 transition-transform">
-                <!-- A4 Print Container -->
-                <div class="a4-container shrink-0" id="prescription-print">
+        <!-- JS Scaling Print Preview Sandbox Wrapper -->
+        <div id="print-wrapper" class="w-full flex justify-center pt-2 pb-6 overflow-hidden">
+            <div id="scale-container" class="origin-top">
+                <!-- A4 Print Target Container -->
+                <div class="a4-container shrink-0 shadow-lg" id="prescription-print">
                     <!-- Dynamic Template Content -->
                 </div>
             </div>
@@ -523,6 +523,44 @@
         addAdvice();
         addMedicine();
     };
+
+    // Mobile Viewport Scaling Engine
+    function adjustScale() {
+        const printContainer = document.getElementById('prescription-print');
+        const scaleContainer = document.getElementById('scale-container');
+        const wrapper = document.getElementById('print-wrapper');
+        
+        if (!printContainer || !scaleContainer || !wrapper) return;
+        if (document.getElementById('screen-3').classList.contains('hidden')) return;
+
+        // Reset scale to measure native dimensions
+        scaleContainer.style.transform = 'scale(1)';
+        wrapper.style.height = 'auto';
+        
+        // Force synchronous reflow layout calculation
+        void printContainer.offsetWidth;
+        
+        const targetWidth = printContainer.offsetWidth || 794; 
+        const targetHeight = printContainer.offsetHeight || 1122;
+        
+        // Compute available horizontal space dynamically
+        const padding = 32; // 16px safety padding per side
+        const availableWidth = wrapper.parentElement.clientWidth - padding;
+        
+        if (availableWidth < targetWidth) {
+            const scale = availableWidth / targetWidth;
+            scaleContainer.style.transform = `scale(${scale})`;
+            // Dynamically lock parent height to scaled element to banish dead space
+            wrapper.style.height = `${(targetHeight * scale) + 16}px`;
+        } else {
+            scaleContainer.style.transform = 'scale(1)';
+            wrapper.style.height = 'auto';
+        }
+    }
+    
+    // Attach listener for screen rotations and resizes
+    window.addEventListener('resize', adjustScale);
+
 
     function loadDoctorProfile() {
         const saved = localStorage.getItem('doctorProfile');
@@ -926,9 +964,9 @@
         if(appState.template === 'original') {
             html = `
                 <div class="relative h-[220px] overflow-hidden bg-white">
-                    <div class="absolute top-0 right-0 w-[65%] h-[180px] bg-slate-800 rounded-bl-full z-0"></div>
-                    <div class="absolute top-[-50px] left-[-50px] w-[300px] h-[300px] bg-slate-200 rounded-full z-0"></div>
-                    <div class="absolute top-[130px] left-[50px] w-[120px] h-[120px] bg-slate-800 rounded-full z-10 flex justify-center items-center text-white text-[3rem]">
+                    <div class="absolute top-0 right-0 w-[65%] h-[180px] bg-red-400 rounded-bl-full z-0"></div>
+                    <div class="absolute top-[-50px] left-[-50px] w-[300px] h-[300px] bg-cyan-200 rounded-full z-0"></div>
+                    <div class="absolute top-[130px] left-[50px] w-[120px] h-[120px] bg-red-400 rounded-full z-10 flex justify-center items-center text-white text-[3rem]">
                         <i class="fa-solid fa-user-doctor drop-shadow-md opacity-90"></i>
                     </div>
                     <div class="relative z-20 flex justify-between pt-8 px-10">
@@ -969,9 +1007,9 @@
                         ${rightColHtml}
                     </div>
                 </div>
-                <div class="absolute bottom-0 w-full px-10 py-5 flex justify-between items-end border-t-[8px] border-slate-800 bg-white pb-8">
+                <div class="absolute bottom-0 w-full px-10 py-5 flex justify-between items-end border-t-[8px] border-cyan-200 bg-white pb-8">
                     <div class="flex items-center gap-3 w-3/5">
-                        <div class="bg-slate-200 rounded-full w-8 h-8 flex justify-center items-center text-slate-800 flex-shrink-0">
+                        <div class="bg-red-100 rounded-full w-8 h-8 flex justify-center items-center text-red-400 flex-shrink-0">
                             <i class="fa-solid fa-plus font-bold text-sm"></i>
                         </div>
                         <div>
@@ -1056,53 +1094,6 @@
                 ${globalFooter}
             `;
         } 
-        else if(appState.template === 'classic') {
-            html = `
-                <div class="relative pt-12 pb-6 px-12 bg-white text-center border-b-[3px] border-[#1e293b]">
-                    <h1 class="text-4xl font-serif font-bold text-[#1e293b] tracking-wider mb-2 uppercase">${docName}</h1>
-                    <p class="text-[15px] font-serif font-semibold text-slate-700 tracking-widest uppercase mb-1">${docField}</p>
-                    <p class="text-[13px] font-serif text-slate-600 mb-1">${degString}</p>
-                    <p class="text-[12px] font-serif text-slate-500">Reg: ${docReg}</p>
-                </div>
-                <div class="px-12 py-4 flex justify-between items-end">
-                    <div class="text-[13px] font-serif font-semibold text-[#1e293b]">
-                        Date: <span class="ml-2 font-normal border-b border-slate-400 inline-block w-24 text-center pb-0.5">${displayDate}</span>
-                    </div>
-                </div>
-                <div class="mx-12 border border-[#1e293b] p-3 mb-6 text-[13px] font-serif bg-slate-50/50">
-                    <div class="grid grid-cols-4 gap-y-2 gap-x-4">
-                        <div class="col-span-4 md:col-span-2 flex"><span class="font-bold mr-2 text-[#1e293b]">Name:</span> <span class="flex-grow border-b border-slate-300 font-sans uppercase pl-2">${pName}</span></div>
-                        <div class="flex"><span class="font-bold mr-2 text-[#1e293b]">Age:</span> <span class="flex-grow border-b border-slate-300 font-sans text-center">${pAge}</span></div>
-                        <div class="flex"><span class="font-bold mr-2 text-[#1e293b]">Sex:</span> <span class="flex-grow border-b border-slate-300 font-sans text-center">${pSex}</span></div>
-                        <div class="col-span-4 flex"><span class="font-bold mr-2 text-[#1e293b]">Address:</span> <span class="flex-grow border-b border-slate-300 font-sans pl-2">${pAddress}</span></div>
-                    </div>
-                </div>
-                <div class="px-12 flex relative" style="min-height: 160mm;">
-                    <div class="w-[30%] pr-6 pt-2 border-r-2 border-[#1e293b] flex flex-col gap-6">
-                        ${leftColHtml}
-                    </div>
-                    <div class="w-[70%] pl-8 pt-0 flex flex-col">
-                        <div class="text-[4rem] font-serif font-bold text-[#1e293b] leading-none mb-4 italic">Rx</div>
-                        ${rightColHtml}
-                    </div>
-                </div>
-                <div class="absolute bottom-0 w-full px-12 py-6 flex justify-between items-end border-t border-[#1e293b] bg-white pb-8">
-                    <div class="w-3/5 font-serif">
-                        <p class="text-[12px] font-bold text-[#1e293b] uppercase tracking-widest mb-1">Clinic Contact</p>
-                        <p class="text-[12px] text-slate-700 font-semibold">${docPhone}</p>
-                        <p class="text-[11px] text-slate-600 whitespace-pre-wrap leading-relaxed">${docAddress}</p>
-                    </div>
-                    <div class="w-[30%] flex flex-col items-center">
-                        <div class="h-16 w-full border-b border-slate-800 flex justify-center items-end pb-1 relative">
-                            ${sigHtml}
-                        </div>
-                        <p class="text-[13px] mt-2 font-serif font-bold text-[#1e293b]">${docName}</p>
-                        <p class="text-[11px] mt-0.5 font-serif text-slate-600 uppercase tracking-widest">Signature</p>
-                    </div>
-                </div>
-                ${globalFooter}
-            `;
-        }
         else if(appState.template === 'editorial') {
             html = `
                 <div class="px-10 py-10 bg-[#eef2ff] border-b-[4px] border-[#4338ca] flex justify-between items-center relative overflow-hidden">
@@ -1205,8 +1196,58 @@
                 ${globalFooter}
             `;
         }
+        else if(appState.template === 'classic') {
+            html = `
+                <div class="relative pt-12 pb-6 px-12 bg-white text-center border-b-[3px] border-[#1e293b]">
+                    <h1 class="text-4xl font-serif font-bold text-[#1e293b] tracking-wider mb-2 uppercase">${docName}</h1>
+                    <p class="text-[15px] font-serif font-semibold text-slate-700 tracking-widest uppercase mb-1">${docField}</p>
+                    <p class="text-[13px] font-serif text-slate-600 mb-1">${degString}</p>
+                    <p class="text-[12px] font-serif text-slate-500">Reg: ${docReg}</p>
+                </div>
+                <div class="px-12 py-4 flex justify-between items-end">
+                    <div class="text-[13px] font-serif font-semibold text-[#1e293b]">
+                        Date: <span class="ml-2 font-normal border-b border-slate-400 inline-block w-24 text-center pb-0.5">${displayDate}</span>
+                    </div>
+                </div>
+                <div class="mx-12 border border-[#1e293b] p-3 mb-6 text-[13px] font-serif bg-slate-50/50">
+                    <div class="grid grid-cols-4 gap-y-2 gap-x-4">
+                        <div class="col-span-4 md:col-span-2 flex"><span class="font-bold mr-2 text-[#1e293b]">Name:</span> <span class="flex-grow border-b border-slate-300 font-sans uppercase pl-2">${pName}</span></div>
+                        <div class="flex"><span class="font-bold mr-2 text-[#1e293b]">Age:</span> <span class="flex-grow border-b border-slate-300 font-sans text-center">${pAge}</span></div>
+                        <div class="flex"><span class="font-bold mr-2 text-[#1e293b]">Sex:</span> <span class="flex-grow border-b border-slate-300 font-sans text-center">${pSex}</span></div>
+                        <div class="col-span-4 flex"><span class="font-bold mr-2 text-[#1e293b]">Address:</span> <span class="flex-grow border-b border-slate-300 font-sans pl-2">${pAddress}</span></div>
+                    </div>
+                </div>
+                <div class="px-12 flex relative" style="min-height: 160mm;">
+                    <div class="w-[30%] pr-6 pt-2 border-r-2 border-[#1e293b] flex flex-col gap-6">
+                        ${leftColHtml}
+                    </div>
+                    <div class="w-[70%] pl-8 pt-0 flex flex-col">
+                        <div class="text-[4rem] font-serif font-bold text-[#1e293b] leading-none mb-4 italic">Rx</div>
+                        ${rightColHtml}
+                    </div>
+                </div>
+                <div class="absolute bottom-0 w-full px-12 py-6 flex justify-between items-end border-t border-[#1e293b] bg-white pb-8">
+                    <div class="w-3/5 font-serif">
+                        <p class="text-[12px] font-bold text-[#1e293b] uppercase tracking-widest mb-1">Clinic Contact</p>
+                        <p class="text-[12px] text-slate-700 font-semibold">${docPhone}</p>
+                        <p class="text-[11px] text-slate-600 whitespace-pre-wrap leading-relaxed">${docAddress}</p>
+                    </div>
+                    <div class="w-[30%] flex flex-col items-center">
+                        <div class="h-16 w-full border-b border-slate-800 flex justify-center items-end pb-1 relative">
+                            ${sigHtml}
+                        </div>
+                        <p class="text-[13px] mt-2 font-serif font-bold text-[#1e293b]">${docName}</p>
+                        <p class="text-[11px] mt-0.5 font-serif text-slate-600 uppercase tracking-widest">Signature</p>
+                    </div>
+                </div>
+                ${globalFooter}
+            `;
+        }
 
         document.getElementById('prescription-print').innerHTML = html;
+        
+        // Execute dynamic scaling calculation immediately after DOM injection
+        setTimeout(adjustScale, 50);
     }
 
 
@@ -1320,9 +1361,21 @@
 
     // --- PDF Export ---
     function downloadPDF() {
+        const scaleContainer = document.getElementById('scale-container');
+        const wrapper = document.getElementById('print-wrapper');
         const element = document.getElementById('prescription-print');
         
-        // Hide download button visually but it's outside a4-container anyway
+        // Secure original visual state
+        const originalTransform = scaleContainer.style.transform;
+        const originalHeight = wrapper.style.height;
+        
+        // Force element to absolute 100% true native scale for crisp html2canvas capture
+        scaleContainer.style.transform = 'scale(1)';
+        wrapper.style.height = 'auto';
+        
+        // Force synchronous browser layout recalculation before capturing
+        void element.offsetHeight;
+        
         const patientName = appState.patient.name.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'patient';
         
         const opt = {
@@ -1333,14 +1386,19 @@
             jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
         
-        // Hide scrollbars temporarily to avoid capturing them
+        // Hide scrollbars and interface elements to avoid capturing them
         document.body.style.overflow = 'hidden';
         const noPrintEls = document.querySelectorAll('.no-print');
         noPrintEls.forEach(el => el.style.display = 'none');
         
         html2pdf().set(opt).from(element).save().then(() => {
+            // Restore visual application state once capture is fully complete
             document.body.style.overflow = '';
             noPrintEls.forEach(el => el.style.display = '');
+            
+            // Re-apply viewport mobile scaling
+            scaleContainer.style.transform = originalTransform;
+            wrapper.style.height = originalHeight;
         });
     }
 
