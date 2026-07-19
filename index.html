@@ -859,14 +859,16 @@
             addAdvice();
             addMedicine();
 
-            // Async pull the repository dataset file silently in the background
+            // Fetch the medicine data registry from the live public GitHub repository cloud endpoint
             try {
-                const res = await fetch('medicines.json');
+                const githubApiUrl = "https://raw.githubusercontent.com/swarajkhan/drrx/refs/heads/main/medicines.json";
+                const res = await fetch(githubApiUrl);
                 if (res.ok) {
                     indianDrugRegistry = await res.json();
+                    console.log("Successfully synchronized localized drug dataset registry from GitHub API cloud engine.");
                 }
             } catch (e) {
-                console.error("Failed to fetch medicine repository file, auto-falling back to blank state:", e);
+                console.error("Failed to fetch remote repository data asset via GitHub raw provider:", e);
             }
         };
 
