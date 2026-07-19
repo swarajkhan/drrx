@@ -624,10 +624,14 @@
                 </div>
             </div>
 
-            <div id="download-actions" class="hidden mt-4 flex justify-center no-print w-full px-4">
+            <div id="download-actions" class="hidden mt-4 flex justify-center gap-4 flex-wrap no-print w-full px-4">
                 <button onclick="downloadPDF()"
                     class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-transform transform hover:scale-105 flex items-center justify-center gap-2 text-lg">
                     <i class="fa-solid fa-download"></i> Download Print-Ready PDF
+                </button>
+                <button id="btn-share" 
+                    class="btn btn-share w-full sm:w-auto bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-transform transform hover:scale-105 flex items-center justify-center gap-2 text-lg">
+                    <i class="fa-solid fa-share-nodes"></i> Share Prescription
                 </button>
             </div>
 
@@ -1903,6 +1907,77 @@
             });
         }
 
+        document.getElementById('btn-share').addEventListener('click', async () => {
+            const element = document.getElementById('prescription-print'); // Target layout container
+            
+            const scaleContainer = document.getElementById('scale-container');
+            const wrapper = document.getElementById('print-wrapper');
+            const originalTransform = scaleContainer.style.transform;
+            const originalHeight = wrapper.style.height;
+            scaleContainer.style.transform = 'scale(1)';
+            wrapper.style.height = 'auto';
+            void element.offsetHeight;
+            
+            const patientName = appState.patient.name.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'patient';
+            
+            // Configure layout parameters matching your existing printing rules
+            const opt = {
+                margin:       0,
+                filename:     `Prescription_${patientName}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true, logging: false, scrollY: 0 },
+                jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+            };
+
+            document.body.style.overflow = 'hidden';
+            const noPrintEls = document.querySelectorAll('.no-print');
+            noPrintEls.forEach(el => el.style.display = 'none');
+
+            try {
+                // Generate raw PDF Blob asset
+                const pdfBlob = await html2pdf()
+                    .set(opt)
+                    .from(element)
+                    .toPdf()
+                    .output('blob');
+                
+                // Wrap blob in a standard File object
+                const pdfFile = new File([pdfBlob], `Prescription_${patientName}.pdf`, { type: "application/pdf" });
+
+                // Environment Check: Mobile/Supported Browsers with HTTPS
+                if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+                    await navigator.share({
+                        files: [pdfFile],
+                        title: 'Patient Prescription',
+                        text: 'Sharing prescription copy.'
+                    });
+                    console.log("Mobile share sheet initiated successfully.");
+                } else {
+                    // PC/Fallback Path: Trigger automatic download seamlessly
+                    console.log("Direct sharing unsupported (PC/HTTP environment). Falling back to local download loop.");
+                    
+                    const downloadUrl = URL.createObjectURL(pdfBlob);
+                    const downloadLink = document.createElement('a');
+                    downloadLink.href = downloadUrl;
+                    downloadLink.download = `Prescription_${patientName}.pdf`;
+                    
+                    document.body.appendChild(downloadLink);
+                    downloadLink.click();
+                    
+                    // Cleanup memory allocation
+                    document.body.removeChild(downloadLink);
+                    URL.revokeObjectURL(downloadUrl);
+                }
+            } catch (error) {
+                console.error("Error running application sharing layout execution logic:", error);
+                alert("An error occurred while preparing the prescription document file package.");
+            } finally {
+                document.body.style.overflow = '';
+                noPrintEls.forEach(el => el.style.display = '');
+                scaleContainer.style.transform = originalTransform;
+                wrapper.style.height = originalHeight;
+            }
+        });
     </script>
 </body>
 
