@@ -232,6 +232,10 @@
         </div>
         <div id="nav-actions" class="hidden flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
             <div id="doctor-greeting" class="text-sm sm:text-base font-medium text-slate-700 mt-1 sm:mt-0"></div>
+            <button id="nav-edit-btn" onclick="editProfile()"
+                class="hidden w-full sm:w-auto justify-center text-sm font-medium text-slate-600 hover:text-slate-800 transition-colors flex items-center gap-2 bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-md">
+                <i class="fa-solid fa-user-gear"></i> Edit Profile
+            </button>
             <button onclick="logout()"
                 class="w-full sm:w-auto justify-center text-sm font-medium text-slate-500 hover:text-red-500 transition-colors flex items-center gap-2 bg-slate-100 hover:bg-red-50 px-4 py-2 rounded-md">
                 <i class="fa-solid fa-sign-out-alt"></i> Reset Profile
@@ -397,6 +401,31 @@
                         </button>
                     </div>
                 </form>
+            </div>
+
+            
+            <!-- Full Mock Prescription Template Sandbox Viewport -->
+            <div class="mt-8 bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden">
+                <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex flex-col items-center gap-4">
+                    <div class="flex items-center gap-2 w-full">
+                        <i class="fa-solid fa-eye text-teal-600"></i>
+                        <h2 class="text-sm font-bold text-slate-800">Live Template Sandbox Preview</h2>
+                    </div>
+                    <!-- Template Quick-Selector Navigation Bar -->
+                    <div class="flex flex-wrap justify-center gap-2 text-xs font-semibold w-full">
+                        <button type="button" onclick="changeMockTemplate('1')" id="mock-tpl-1" class="mock-tpl-btn px-3 py-1.5 rounded-full border border-teal-200 bg-teal-50 text-teal-700 transition-colors shadow-sm">Standard Comprehensive</button>
+                        <button type="button" onclick="changeMockTemplate('2')" id="mock-tpl-2" class="mock-tpl-btn px-3 py-1.5 rounded-full border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 transition-colors shadow-sm">Modern Teal</button>
+                        <button type="button" onclick="changeMockTemplate('3')" id="mock-tpl-3" class="mock-tpl-btn px-3 py-1.5 rounded-full border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 transition-colors shadow-sm">Editorial Vibrant</button>
+                        <button type="button" onclick="changeMockTemplate('4')" id="mock-tpl-4" class="mock-tpl-btn px-3 py-1.5 rounded-full border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 transition-colors shadow-sm">Compact Clean</button>
+                        <button type="button" onclick="changeMockTemplate('5')" id="mock-tpl-5" class="mock-tpl-btn px-3 py-1.5 rounded-full border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 transition-colors shadow-sm">Executive Classic</button>
+                    </div>
+                </div>
+                <div class="p-4 bg-slate-200 flex justify-center items-start overflow-hidden w-full">
+                    <!-- Centered sizing wrapper making the preview fill the width cleanly without phantom margins -->
+                    <div class="w-full max-w-[210mm] overflow-hidden flex justify-center items-start" style="height: calc(min(100vw - 2rem, 210mm) * (296 / 210));">
+                        <div id="live-preview-box" class="a4-container shadow-2xl bg-white origin-top" style="width: 210mm; height: 296mm; margin: 0; pointer-events: none;"></div>
+                    </div>
+                </div>
             </div>
 
             <!-- Global Web App Footer -->
@@ -849,6 +878,249 @@
         };
 
         // Initialization
+        
+        // Attach a global event listener to the doctor form to catch all changes and update the live preview
+        document.addEventListener('DOMContentLoaded', () => {
+            const docForm = document.getElementById('doctor-form');
+            if(docForm) {
+                docForm.addEventListener('input', updateLivePreview);
+                docForm.addEventListener('change', updateLivePreview);
+            }
+        });
+
+let currentMockTemplate = '1';
+        
+        function changeMockTemplate(val) {
+            currentMockTemplate = val;
+            document.querySelectorAll('.mock-tpl-btn').forEach(btn => {
+                btn.classList.remove('border-teal-200', 'bg-teal-50', 'text-teal-700');
+                btn.classList.add('border-slate-200', 'bg-white', 'hover:bg-slate-50', 'text-slate-600');
+            });
+            const activeBtn = document.getElementById('mock-tpl-' + val);
+            if(activeBtn) {
+                activeBtn.classList.remove('border-slate-200', 'bg-white', 'hover:bg-slate-50', 'text-slate-600');
+                activeBtn.classList.add('border-teal-200', 'bg-teal-50', 'text-teal-700');
+            }
+            updateLivePreview();
+        }
+
+        
+        function adjustLivePreviewScale() {
+            const livePreviewBox = document.getElementById('live-preview-box');
+            if (!livePreviewBox) return;
+            
+            const parentWrapper = livePreviewBox.parentElement;
+            if (!parentWrapper) return;
+
+            // Calculate width dynamically based on the current size of the grey box container
+            const availableWidth = parentWrapper.clientWidth;
+            const targetNativeWidth = 794; // 210mm converted into raw layout pixels
+            
+            // Compute the optimal scale ratio to force-fit the box boundaries perfectly
+            const scaleFactor = availableWidth / targetNativeWidth;
+            
+            // Apply transform properties cleanly from the exact top-center axis anchor point
+            livePreviewBox.style.transform = scale();
+            livePreviewBox.style.transformOrigin = 'top center';
+        }
+
+        // Attach the resizing hooks directly to your form renderer loops
+        const originalUpdateLivePreview = updateLivePreview;
+        updateLivePreview = function() {
+            originalUpdateLivePreview();
+            adjustLivePreviewScale();
+        };
+
+        // Monitor browser layout window dimensions changes dynamically
+        window.addEventListener('resize', adjustLivePreviewScale);
+
+        function updateLivePreview() {
+            const livePreviewBox = document.getElementById('live-preview-box');
+            if (!livePreviewBox) return;
+
+            // 1. Gather live field variables dynamically from the input form state with clean fallback behaviors
+            const docName = document.getElementById('doc-name')?.value?.trim() || '';
+            const docField = document.getElementById('doc-field')?.value || 'General Physician';
+            const docSpec = document.getElementById('doc-spec')?.value?.trim() || '';
+            const activeField = docField === 'Specialist' ? docSpec : docField;
+            const docReg = document.getElementById('doc-reg')?.value?.trim() || '';
+            const docMisc = document.getElementById('doc-misc')?.value?.trim() || '';
+            const docPhone = document.getElementById('doc-phone')?.value?.trim() || '';
+            const docAddress = document.getElementById('doc-address')?.value?.trim() || '';
+
+            // 2. Map checkboxes to compile degree text strings dynamically
+            let baseDegrees = [];
+            document.querySelectorAll('.doc-degree:checked').forEach(cb => {
+                if (cb.value !== 'Other') {
+                    const majorId = cb.value === 'M.D.' ? 'major-md' : cb.value === 'D.M.' ? 'major-dm' : 'major-mds';
+                    const majorVal = document.getElementById(majorId)?.value?.trim();
+                    baseDegrees.push(majorVal ? `${cb.value} (${majorVal})` : cb.value);
+                }
+            });
+            const otherDegree = document.getElementById('doc-degree-other')?.value?.trim();
+            if (otherDegree) baseDegrees.push(otherDegree);
+            const degString = baseDegrees.join(', ');
+
+            const displayDate = new Date().toLocaleDateString('en-GB');
+
+            // 3. Clear out mock text - use clean, non-obtrusive blank row placeholders for the setup preview screen
+            const pName = "";
+            const pAge = "";
+            const pSex = "";
+            const pWeight = "";
+            const pAddress = "";
+
+            let leftColHtml = '';
+            let rightColHtml = '';
+            const sigHtml = '';
+
+            // 4. Compile targeted template selection layout skin smoothly
+            let html = '';
+            if (currentMockTemplate === '1') {
+                html = `
+                    <div class="relative h-[220px] overflow-hidden bg-white">
+                        <div class="absolute top-0 right-0 w-[65%] h-[180px] bg-red-400 rounded-bl-full z-0"></div>
+                        <div class="absolute top-[-50px] left-[-50px] w-[300px] h-[300px] bg-cyan-200 rounded-full z-0"></div>
+                        <div class="absolute top-[130px] left-[50px] w-[120px] h-[120px] bg-red-400 rounded-full z-10 flex justify-center items-center text-white text-[3rem]"><i class="fa-solid fa-user-doctor opacity-90"></i></div>
+                        <div class="relative z-20 flex justify-between pt-8 px-10 text-right leading-snug">
+                            <div class="w-32"></div>
+                            <div class="text-white w-3/5 pr-4">
+                                <h1 class="text-2xl font-serif font-bold mb-1">${docName}</h1>
+                                <p class="text-xs opacity-90 tracking-wide">${activeField}</p>
+                                <p class="text-[11px] font-semibold opacity-90 mt-0.5">${degString}</p>
+                                <p class="text-[10px] opacity-90 mt-0.5 italic">${docMisc}</p>
+                                ${docReg ? `<p class="text-[10px] opacity-80 mt-0.5">Reg. no.- ${docReg}</p>` : ''}
+                            </div>
+                        </div>
+                        <div class="absolute bottom-1 right-10 text-xs font-semibold z-20 text-slate-800">DATE: <span class="border-b border-dashed border-slate-400 inline-block w-24 text-center">${displayDate}</span></div>
+                    </div>
+                    <div class="px-8 py-2 border-y border-slate-300 mx-4 my-1 text-[12px] font-semibold flex bg-slate-50 items-end gap-2">
+                        <span>NAME:</span><span class="flex-grow border-b border-dashed border-slate-300 text-slate-900 font-bold uppercase truncate">${pName}</span>
+                        <span>AGE:</span><span class="w-8 border-b border-dashed border-slate-300 text-center">${pAge}</span>
+                        <span>SEX:</span><span class="w-8 border-b border-dashed border-slate-300 text-center">${pSex}</span>
+                    </div>
+                    <div class="px-8 flex relative" style="height: 600px;">
+                        <div class="w-[35%] pr-4 pt-2 border-r border-slate-200 flex flex-col">${leftColHtml}</div>
+                        <div class="w-[65%] pl-4 pt-1 flex flex-col"><div class="text-3xl font-serif font-bold text-slate-800 leading-none mb-2">Rx</div>${rightColHtml}</div>
+                    </div>
+                    <div class="absolute bottom-0 w-full px-8 py-4 flex justify-between items-end border-t-[6px] border-cyan-200 bg-white">
+                        <div class="text-[11px] text-slate-600 max-w-[60%]"><strong>${docPhone}</strong><br><span class="block truncate">${docAddress}</span></div>
+                        <div class="w-[30%] flex flex-col items-center"><div class="h-10 flex items-end justify-center w-full border-b border-slate-300 pb-1">${sigHtml}</div><p class="text-[10px] font-bold text-slate-800 mt-0.5">${docName}</p></div>
+                    </div>`;
+            } 
+            else if (currentMockTemplate === '2') {
+                html = `
+                    <div class="relative h-[220px] overflow-hidden bg-white">
+                        <div class="absolute top-0 right-0 w-[65%] h-[180px] bg-[#0f766e] rounded-bl-full z-0"></div>
+                        <div class="absolute top-[-50px] left-[-50px] w-[300px] h-[300px] bg-[#ccfbf1] rounded-full z-0"></div>
+                        <div class="absolute top-[130px] left-[50px] w-[120px] h-[120px] bg-[#0f766e] rounded-full z-10 flex justify-center items-center text-white text-[3rem]"><i class="fa-solid fa-user-doctor opacity-90"></i></div>
+                        <div class="relative z-20 flex justify-between pt-8 px-10 text-right leading-snug">
+                            <div class="w-32"></div>
+                            <div class="text-white w-3/5 pr-4">
+                                <h1 class="text-2xl font-serif font-bold mb-1">${docName}</h1>
+                                <p class="text-xs opacity-90 tracking-wide">${activeField}</p>
+                                <p class="text-[11px] font-semibold opacity-90 mt-0.5">${degString}</p>
+                                <p class="text-[10px] opacity-90 mt-0.5 italic">${docMisc}</p>
+                                ${docReg ? `<p class="text-[10px] opacity-80 mt-0.5">Reg. no.- ${docReg}</p>` : ''}
+                            </div>
+                        </div>
+                        <div class="absolute bottom-1 right-10 text-xs font-semibold z-20 text-slate-800">DATE: <span class="border-b border-dashed border-slate-400 inline-block w-24 text-center">${displayDate}</span></div>
+                    </div>
+                    <div class="px-8 py-2 border-y border-slate-300 mx-4 my-1 text-[12px] font-semibold flex bg-slate-50 items-end gap-2">
+                        <span>NAME:</span><span class="flex-grow border-b border-dashed border-slate-300 text-slate-900 font-bold uppercase truncate">${pName}</span>
+                        <span>AGE:</span><span class="w-8 border-b border-dashed border-slate-300 text-center">${pAge}</span>
+                        <span>SEX:</span><span class="w-8 border-b border-dashed border-slate-300 text-center">${pSex}</span>
+                    </div>
+                    <div class="px-8 flex relative" style="height: 600px;">
+                        <div class="w-[35%] pr-4 pt-2 border-r border-slate-200 flex flex-col">${leftColHtml}</div>
+                        <div class="w-[65%] pl-4 pt-1 flex flex-col"><div class="text-3xl font-serif font-bold text-[#0f766e] leading-none mb-2">Rx</div>${rightColHtml}</div>
+                    </div>
+                    <div class="absolute bottom-0 w-full px-8 py-4 flex justify-between items-end border-t-[6px] border-[#0f766e] bg-white">
+                        <div class="text-[11px] text-slate-600 max-w-[60%]"><strong>${docPhone}</strong><br><span class="block truncate">${docAddress}</span></div>
+                        <div class="w-[30%] flex flex-col items-center"><div class="h-10 flex items-end justify-center w-full border-b border-slate-300 pb-1">${sigHtml}</div><p class="text-[10px] font-bold text-slate-800 mt-0.5">${docName}</p></div>
+                    </div>`;
+            }
+            else if (currentMockTemplate === '3') {
+                html = `
+                    <div class="px-8 py-6 bg-[#eef2ff] border-b-[4px] border-[#4338ca] relative overflow-hidden">
+                        <div class="flex justify-between items-center w-full relative z-10">
+                            <div>
+                                <h1 class="text-2xl font-extrabold text-[#4338ca] mb-0.5">${docName}</h1>
+                                <p class="text-xs font-bold text-slate-700 tracking-wide">${activeField}</p>
+                                <p class="text-[11px] font-semibold text-slate-600 mt-0.5">${degString} ${docMisc ? '| ' + docMisc : ''}</p>
+                            </div>
+                            ${docReg ? `<div class="bg-white p-2 rounded shadow-sm border border-[#c7d2fe] text-center text-[11px] font-bold text-[#4338ca]">Reg: ${docReg}</div>` : ''}
+                        </div>
+                    </div>
+                    <div class="mx-6 mt-3 bg-white border border-[#e0e7ff] rounded-xl p-3 shadow-sm flex items-center justify-between text-[12px] text-slate-600">
+                        <div><strong>${pName}</strong> &nbsp;|&nbsp; ${pAge} Yrs / ${pSex} &nbsp;|&nbsp; ${pWeight} kg</div>
+                        <div class="bg-[#4338ca] text-white px-2 py-0.5 rounded font-bold text-[10px]">${displayDate}</div>
+                    </div>
+                    <div class="px-8 flex relative mt-3" style="height: 600px;">
+                        <div class="w-[30%] pr-4 pt-1 border-r border-slate-200 flex flex-col">${leftColHtml}</div>
+                        <div class="w-[70%] pl-5 pt-0 flex flex-col"><div class="flex items-center gap-2 mb-2"><div class="bg-[#4338ca] text-white px-2 py-0.5 rounded text-lg font-serif italic font-bold">Rx</div><div class="h-px bg-slate-200 flex-grow"></div></div>${rightColHtml}</div>
+                    </div>
+                    <div class="absolute bottom-0 w-full px-8 py-3 bg-slate-50 border-t border-slate-200 flex justify-between items-end">
+                        <div class="text-[11px] text-slate-600"><i class="fa-solid fa-phone text-[#4338ca] mr-1"></i>${docPhone}<br><i class="fa-solid fa-location-dot text-[#4338ca] mr-1"></i>${docAddress}</div>
+                        <div class="w-[30%] flex flex-col items-center"><div class="h-10 flex items-end justify-center w-full border-b border-slate-300 pb-1">${sigHtml}</div><p class="text-[10px] font-bold text-slate-700 mt-0.5">${docName}</p></div>
+                    </div>`;
+            }
+            else if (currentMockTemplate === '4') {
+                html = `
+                    <div class="px-6 pt-6 pb-2 border-b-2 border-[#374151] flex justify-between items-end bg-white">
+                        <div>
+                            <h1 class="text-xl font-bold text-[#374151] uppercase tracking-tight leading-none mb-0.5">${docName}</h1>
+                            <p class="text-[11px] font-bold text-slate-600 uppercase tracking-widest">${activeField}</p>
+                            <p class="text-[10px] text-slate-500 mt-0.5">${degString} ${docReg ? '| Reg: ' + docReg : ''}</p>
+                        </div>
+                        <div class="text-right text-[10px] text-slate-500">
+                            <p class="font-bold text-slate-600"><i class="fa-solid fa-phone mr-1"></i>${docPhone}</p>
+                            <p class="max-w-[180px] truncate mt-0.5">${docAddress}</p>
+                        </div>
+                    </div>
+                    <div class="px-6 py-1 border-b border-slate-200 bg-slate-50 flex items-center justify-between text-[11px] font-medium tracking-wider text-slate-600">
+                        <div><strong>${pName}</strong> &nbsp;|&nbsp; ${pAge}/${pSex} &nbsp;|&nbsp; ${pWeight} kg</div>
+                        <div>DATE: <strong>${displayDate}</strong></div>
+                    </div>
+                    <div class="px-6 pt-3 flex relative" style="height: 600px;">
+                        <div class="w-[30%] pr-3 border-r border-slate-200 flex flex-col">${leftColHtml}</div>
+                        <div class="w-[70%] pl-4 flex flex-col"><div class="text-xl font-serif font-bold text-[#374151] mb-1 border-b border-slate-200 pb-0.5">Rx</div>${rightColHtml}</div>
+                    </div>
+                    <div class="absolute bottom-0 w-full px-6 py-3 bg-white flex justify-end items-end border-t border-slate-200">
+                        <div class="w-[25%] flex flex-col items-center"><div class="h-8 flex items-end justify-center w-full border-b border-slate-400 pb-1">${sigHtml}</div><p class="text-[10px] font-bold text-slate-700 mt-0.5">${docName}</p></div>
+                    </div>`;
+            }
+            else if (currentMockTemplate === '5') {
+                html = `
+                    <div class="pt-8 pb-4 px-8 text-center border-b-[2px] border-[#1e293b] bg-white">
+                        <h1 class="text-2xl font-serif font-bold text-[#1e293b] uppercase mb-0.5">${docName}</h1>
+                        <p class="text-xs font-serif font-semibold text-slate-700 uppercase tracking-wider mb-0.5">${activeField}</p>
+                        <p class="text-[11px] font-serif text-slate-600 mb-0.5">${degString} ${docReg ? '| Reg: ' + docReg : ''}</p>
+                        <p class="text-[10px] font-serif text-slate-500 italic">${docMisc}</p>
+                    </div>
+                    <div class="px-8 py-2 flex justify-between items-center text-[12px] font-serif border-b border-slate-100">
+                        <div>Date: <strong>${displayDate}</strong></div>
+                    </div>
+                    <div class="mx-6 border border-[#1e293b] p-2 my-2 text-[11px] font-serif bg-slate-50/50 flex flex-wrap gap-x-4">
+                        <div><strong>Patient:</strong> ${pName}</div>
+                        <div><strong>Age/Sex:</strong> ${pAge} Yrs / ${pSex}</div>
+                        <div class="flex-grow text-right"><strong>Address:</strong> ${pAddress}</div>
+                    </div>
+                    <div class="px-8 flex relative" style="height: 600px;">
+                        <div class="w-[30%] pr-4 pt-1 border-r-2 border-[#1e293b] flex flex-col">${leftColHtml}</div>
+                        <div class="w-[70%] pl-5 pt-0 flex flex-col"><div class="text-3xl font-serif font-bold text-[#1e293b] italic leading-none mb-2">Rx</div>${rightColHtml}</div>
+                    </div>
+                    <div class="absolute bottom-0 w-full px-8 py-4 flex justify-between items-end border-t border-[#1e293b] bg-white">
+                        <div class="text-[11px] font-serif text-slate-600 max-w-[65%]"><strong>Contact:</strong> ${docPhone}<br>${docAddress}</div>
+                        <div class="w-[25%] flex flex-col items-center"><div class="h-10 flex items-end justify-center w-full border-b border-slate-800 pb-1">${sigHtml}</div><p class="text-[11px] font-serif font-bold text-[#1e293b] mt-0.5">${docName}</p></div>
+                    </div>`;
+            }
+
+            // 7. Inject HTML code into sandbox container cleanly
+            livePreviewBox.innerHTML = html;
+        }
+
+
         window.onload = async () => {
             // Init dates
             const today = new Date().toISOString().split('T')[0];
@@ -943,17 +1215,72 @@
             if (saved) {
                 appState.doctor = JSON.parse(saved);
                 const navActions = document.getElementById('nav-actions');
-                navActions.classList.remove('hidden');
-                navActions.classList.add('flex');
+                if (navActions) {
+                    navActions.classList.remove('hidden');
+                    navActions.classList.add('flex');
+                }
+                
+                const editBtn = document.getElementById('nav-edit-btn');
+                if (editBtn) editBtn.classList.remove('hidden'); // Show Edit option
+                
                 updateDoctorGreeting();
-                if (appState.doctor.miscInfo) document.getElementById('doc-misc').value = appState.doctor.miscInfo;
+                
+                // Populate fields visually
+                if (document.getElementById('doc-name')) document.getElementById('doc-name').value = appState.doctor.name || '';
+                if (document.getElementById('doc-reg')) document.getElementById('doc-reg').value = appState.doctor.regNo || '';
+                if (document.getElementById('doc-field')) document.getElementById('doc-field').value = appState.doctor.field || 'General Physician';
+                if (document.getElementById('doc-phone')) document.getElementById('doc-phone').value = appState.doctor.phone || '';
+                if (document.getElementById('doc-address')) document.getElementById('doc-address').value = appState.doctor.address || '';
+                if (document.getElementById('doc-misc')) document.getElementById('doc-misc').value = appState.doctor.miscInfo || '';
+                
+                // Re-check stored checkbox degree arrays
+                document.querySelectorAll('.doc-degree').forEach(cb => {
+                    cb.checked = appState.doctor.degrees ? appState.doctor.degrees.includes(cb.value) : false;
+                });
+
                 if (appState.doctor.degreeMajors) {
-                    document.getElementById('major-md').value = appState.doctor.degreeMajors["M.D."] || '';
-                    document.getElementById('major-dm').value = appState.doctor.degreeMajors["D.M."] || '';
-                    document.getElementById('major-mds').value = appState.doctor.degreeMajors["M.D.S."] || '';
+                    if (document.getElementById('major-md')) document.getElementById('major-md').value = appState.doctor.degreeMajors["M.D."] || '';
+                    if (document.getElementById('major-dm')) document.getElementById('major-dm').value = appState.doctor.degreeMajors["D.M."] || '';
+                    if (document.getElementById('major-mds')) document.getElementById('major-mds').value = appState.doctor.degreeMajors["M.D.S."] || '';
                 }
 
-                // Automatically toggle visibility based on stored state
+                // Re-trigger specialization drop-downs and input field sub-containers visibility maps
+                toggleSpecialization();
+                toggleOtherDegree();
+                toggleMajorInput('cb-md', 'major-md');
+                toggleMajorInput('cb-dm', 'major-dm');
+                toggleMajorInput('cb-mds', 'major-mds');
+
+                setScreen('screen-2');
+                updateLivePreview();
+                setTimeout(adjustLivePreviewScale, 100);
+            } else {
+                setScreen('screen-1');
+                setTimeout(updateLivePreview, 50);
+                setTimeout(adjustLivePreviewScale, 100);
+            }
+        }
+
+        function editProfile() {
+            // Force load data settings back into the form UI fields
+            const saved = localStorage.getItem('doctorProfile');
+            if (saved) {
+                appState.doctor = JSON.parse(saved);
+                
+                if (document.getElementById('doc-name')) document.getElementById('doc-name').value = appState.doctor.name || '';
+                if (document.getElementById('doc-reg')) document.getElementById('doc-reg').value = appState.doctor.regNo || '';
+                if (document.getElementById('doc-field')) document.getElementById('doc-field').value = appState.doctor.field || 'General Physician';
+                if (document.getElementById('doc-phone')) document.getElementById('doc-phone').value = appState.doctor.phone || '';
+                if (document.getElementById('doc-address')) document.getElementById('doc-address').value = appState.doctor.address || '';
+                if (document.getElementById('doc-misc')) document.getElementById('doc-misc').value = appState.doctor.miscInfo || '';
+                
+                document.querySelectorAll('.doc-degree').forEach(cb => {
+                    cb.checked = appState.doctor.degrees ? appState.doctor.degrees.includes(cb.value) : false;
+                });
+                
+                // Re-trigger toggles
+                toggleSpecialization();
+                toggleOtherDegree();
                 ['M.D.', 'D.M.', 'M.D.S.'].forEach(deg => {
                     document.querySelectorAll('.doc-degree').forEach(cb => {
                         if (cb.value === deg && cb.checked) {
@@ -962,11 +1289,12 @@
                         }
                     });
                 });
-
-                setScreen('screen-2');
-            } else {
-                setScreen('screen-1');
             }
+            
+            // Route back onto the modification canvas screen
+            setScreen('screen-1');
+            updateLivePreview();
+            setTimeout(adjustLivePreviewScale, 100);
         }
 
         function saveDoctorProfile(e) {
@@ -1006,6 +1334,8 @@
                 const navActions = document.getElementById('nav-actions');
                 navActions.classList.add('hidden');
                 navActions.classList.remove('flex');
+                const editBtn = document.getElementById('nav-edit-btn');
+                if (editBtn) editBtn.classList.add('hidden');
                 // reset form
                 document.getElementById('doctor-form').reset();
                 toggleSpecialization();
