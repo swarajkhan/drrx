@@ -2226,7 +2226,7 @@
             pages.forEach((page, idx) => {
                 page.classList.remove('mb-8');
                 page.style.marginBottom = '0';
-                
+
                 // Anti-Ghost-Page trick: Reduce the height of the VERY LAST page by 1mm.
                 // This prevents browser sub-pixel floating point math from pushing the total canvas 
                 // height to something like 594.01mm, which forces jsPDF to spawn an empty 3rd page.
@@ -2235,7 +2235,7 @@
                     page.style.overflow = 'hidden';
                 }
             });
-            
+
             captureContainer.appendChild(clone);
 
             document.body.appendChild(captureContainer);
@@ -2285,38 +2285,70 @@
         }
 
         document.getElementById('btn-share').addEventListener('click', async () => {
-            const element = document.getElementById('prescription-print'); // Target layout container
+            const element = document.getElementById('prescription-print');
+            if (!element) return;
 
-            const scaleContainer = document.getElementById('scale-container');
-            const wrapper = document.getElementById('print-wrapper');
-            const originalTransform = scaleContainer.style.transform;
-            const originalHeight = wrapper.style.height;
-            scaleContainer.style.transform = 'scale(1)';
-            wrapper.style.height = 'auto';
-            void element.offsetHeight;
+            // 1. Isolate the environment by hiding the existing app UI
+            const children = Array.from(document.body.children);
+            const originalDisplays = new Map();
+            children.forEach(child => {
+                if (child.tagName !== 'SCRIPT' && child.id !== 'signature-modal') {
+                    originalDisplays.set(child, child.style.display);
+                    child.style.display = 'none';
+                }
+            });
+
+            // 2. Strip body clipping constraints
+            const originalBodyClasses = document.body.className;
+            document.body.className = "bg-white font-sans";
+            document.body.style.overflow = 'visible';
+            document.body.style.height = 'auto';
+
+            // 3. Create wrapper for layout clone
+            const captureContainer = document.createElement('div');
+            captureContainer.style.width = '210mm';
+            captureContainer.style.margin = '0';
+            captureContainer.style.padding = '0';
+            captureContainer.style.background = 'white';
+
+            // 4. Clone and clean layout perfectly
+            const clone = element.cloneNode(true);
+            clone.classList.remove('gap-4', 'pb-8');
+            clone.style.transform = 'scale(1)';
+
+            const pages = clone.querySelectorAll('.prescription-page');
+            pages.forEach((page, idx) => {
+                page.classList.remove('mb-8');
+                page.style.marginBottom = '0';
+                if (idx === pages.length - 1) {
+                    page.style.height = '296mm';
+                    page.style.overflow = 'hidden';
+                }
+            });
+
+            captureContainer.appendChild(clone);
+            document.body.appendChild(captureContainer);
 
             const patientName = appState.patient.name.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'patient';
 
-            // Configure layout parameters matching your existing printing rules
             const opt = {
                 margin: 0,
                 filename: `Prescription_${patientName}.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
+                image: { type: 'jpeg', quality: 1.0 },
                 html2canvas: { scale: 2, useCORS: true, logging: false, scrollY: 0 },
-                jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
 
-            document.body.style.overflow = 'hidden';
-            const noPrintEls = document.querySelectorAll('.no-print');
+            const noPrintEls = clone.querySelectorAll('.no-print');
             noPrintEls.forEach(el => el.style.display = 'none');
 
             try {
-                // Generate raw PDF Blob asset
-                const pdfBlob = await html2pdf()
-                    .set(opt)
-                    .from(element)
-                    .toPdf()
-                    .output('blob');
+                // Generate raw PDF Blob asset after a 500ms browser paint delay
+                const pdfBlob = await new Promise((resolve, reject) => {
+                    setTimeout(() => {
+                        html2pdf().set(opt).from(captureContainer).output('blob').then(resolve).catch(reject);
+                    }, 500);
+                });
 
                 // Wrap blob in a standard File object
                 const pdfFile = new File([pdfBlob], `Prescription_${patientName}.pdf`, { type: "application/pdf" });
@@ -2332,16 +2364,12 @@
                 } else {
                     // PC/Fallback Path: Trigger automatic download seamlessly
                     console.log("Direct sharing unsupported (PC/HTTP environment). Falling back to local download loop.");
-
                     const downloadUrl = URL.createObjectURL(pdfBlob);
                     const downloadLink = document.createElement('a');
                     downloadLink.href = downloadUrl;
                     downloadLink.download = `Prescription_${patientName}.pdf`;
-
                     document.body.appendChild(downloadLink);
                     downloadLink.click();
-
-                    // Cleanup memory allocation
                     document.body.removeChild(downloadLink);
                     URL.revokeObjectURL(downloadUrl);
                 }
@@ -2349,10 +2377,14 @@
                 console.error("Error running application sharing layout execution logic:", error);
                 alert("An error occurred while preparing the prescription document file package.");
             } finally {
+                // Cleanup memory allocation and restore UI
+                document.body.removeChild(captureContainer);
+                document.body.className = originalBodyClasses;
                 document.body.style.overflow = '';
-                noPrintEls.forEach(el => el.style.display = '');
-                scaleContainer.style.transform = originalTransform;
-                wrapper.style.height = originalHeight;
+                document.body.style.height = '';
+                for (const [child, display] of originalDisplays.entries()) {
+                    child.style.display = display;
+                }
             }
         });
     </script>
