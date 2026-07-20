@@ -420,12 +420,11 @@
                         <button type="button" onclick="changeMockTemplate('5')" id="mock-tpl-5" class="mock-tpl-btn px-3 py-1.5 rounded-full border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 transition-colors shadow-sm">Executive Classic</button>
                     </div>
                 </div>
-                <div class="p-4 bg-slate-200 flex justify-center items-start overflow-hidden w-full">
-                    <!-- Centered sizing wrapper making the preview fill the width cleanly without phantom margins -->
-                    <div class="w-full max-w-[210mm] overflow-hidden flex justify-center items-start" style="height: calc(min(100vw - 2rem, 210mm) * (296 / 210));">
-                        <div id="live-preview-box" class="a4-container shadow-2xl bg-white origin-top" style="width: 210mm; height: 296mm; margin: 0; pointer-events: none;"></div>
-                    </div>
-                </div>
+        <div class="p-4 bg-slate-200 flex justify-center items-start overflow-hidden">
+            <div class="w-[210mm] max-w-full overflow-hidden origin-top" style="height: calc(296mm * 0.42); max-height: 480px;">
+                <div id="live-preview-box" class="a4-container shadow-2xl bg-white origin-top-left" style="transform: scale(0.42); width: 210mm; height: 296mm; margin: 0; pointer-events: none;"></div>
+            </div>
+        </div>
             </div>
 
             <!-- Global Web App Footer -->
@@ -904,35 +903,7 @@ let currentMockTemplate = '1';
             updateLivePreview();
         }
 
-        
-        function adjustLivePreviewScale() {
-            const livePreviewBox = document.getElementById('live-preview-box');
-            if (!livePreviewBox) return;
-            
-            const parentWrapper = livePreviewBox.parentElement;
-            if (!parentWrapper) return;
 
-            // Calculate width dynamically based on the current size of the grey box container
-            const availableWidth = parentWrapper.clientWidth;
-            const targetNativeWidth = 794; // 210mm converted into raw layout pixels
-            
-            // Compute the optimal scale ratio to force-fit the box boundaries perfectly
-            const scaleFactor = availableWidth / targetNativeWidth;
-            
-            // Apply transform properties cleanly from the exact top-center axis anchor point
-            livePreviewBox.style.transform = scale();
-            livePreviewBox.style.transformOrigin = 'top center';
-        }
-
-        // Attach the resizing hooks directly to your form renderer loops
-        const originalUpdateLivePreview = updateLivePreview;
-        updateLivePreview = function() {
-            originalUpdateLivePreview();
-            adjustLivePreviewScale();
-        };
-
-        // Monitor browser layout window dimensions changes dynamically
-        window.addEventListener('resize', adjustLivePreviewScale);
 
         function updateLivePreview() {
             const livePreviewBox = document.getElementById('live-preview-box');
@@ -1253,11 +1224,9 @@ let currentMockTemplate = '1';
 
                 setScreen('screen-2');
                 updateLivePreview();
-                setTimeout(adjustLivePreviewScale, 100);
             } else {
                 setScreen('screen-1');
                 setTimeout(updateLivePreview, 50);
-                setTimeout(adjustLivePreviewScale, 100);
             }
         }
 
@@ -1294,7 +1263,6 @@ let currentMockTemplate = '1';
             // Route back onto the modification canvas screen
             setScreen('screen-1');
             updateLivePreview();
-            setTimeout(adjustLivePreviewScale, 100);
         }
 
         function saveDoctorProfile(e) {
