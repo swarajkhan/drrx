@@ -346,6 +346,23 @@
                             </div>
                             <div class="flex items-center gap-1.5 flex-wrap">
                                 <label class="flex items-center gap-2 cursor-pointer select-none">
+                                    <input type="checkbox" value="M.S." id="cb-ms"
+                                        onchange="toggleMajorInput('cb-ms', 'major-ms')"
+                                        class="doc-degree form-checkbox text-teal-600">
+                                    <span class="text-sm text-slate-700">M.S.</span>
+                                </label>
+                                <div class="relative inline-block">
+                                    <input type="text" id="major-ms"
+                                        oninput="handleLocalSuggestions('major-ms', 'suggestions-ms', 'ms')"
+                                        placeholder="(Major) [optional]"
+                                        class="hidden border border-slate-300 rounded px-2 py-0.5 text-xs min-w-[130px] max-w-[160px] outline-none focus:border-teal-500 placeholder-slate-400">
+                                    <div id="suggestions-ms"
+                                        class="hidden absolute left-0 right-0 top-full bg-white border border-slate-200 rounded-b-lg shadow-lg max-h-40 overflow-y-auto z-50 text-xs font-medium divide-y divide-slate-100">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                                <label class="flex items-center gap-2 cursor-pointer select-none">
                                     <input type="checkbox" value="D.M." id="cb-dm"
                                         onchange="toggleMajorInput('cb-dm', 'major-dm')"
                                         class="doc-degree form-checkbox text-teal-600">
@@ -812,6 +829,20 @@
                 "Sports Medicine",
                 "Nuclear Medicine",
                 "Radiotherapy"
+            ],
+            ms: [
+                "General Surgery",
+                "Orthopaedics",
+                "Orthopedics",
+                "Ophthalmology",
+                "Otorhinolaryngology (ENT)",
+                "ENT",
+                "Obstetrics & Gynaecology",
+                "OBG",
+                "OBGYN",
+                "Traumatology & Surgery",
+                "Anatomy",
+                "Anaesthesia"
             ],
             dm: [
                 "Cardiology",
@@ -1328,6 +1359,7 @@
             appState.doctor.miscInfo = document.getElementById('doc-misc').value;
             appState.doctor.degreeMajors = {
                 "M.D.": document.getElementById('major-md').value.trim(),
+                "M.S.": document.getElementById('major-ms') ? document.getElementById('major-ms').value.trim() : "",
                 "D.M.": document.getElementById('major-dm').value.trim(),
                 "M.D.S.": document.getElementById('major-mds').value.trim()
             };

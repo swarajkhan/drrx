@@ -4,7 +4,7 @@
 
 **Your Clinical Companion**
 
-_A lightweight, high-performance, single-file web application designed to help doctors seamlessly generate, preview, and download beautifully formatted, print-ready A4 prescriptions in seconds._
+_A lightweight, high-performance, single-file web application designed to help doctors seamlessly generate, preview, download, and share beautifully formatted, print-ready A4 prescriptions in seconds._
 
 ![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)
 ![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
@@ -18,23 +18,25 @@ _A lightweight, high-performance, single-file web application designed to help d
 
 ## ⚡ Core Architecture
 
-DrRx is engineered with a **zero-dependency, single-file architecture** (`index.html`). By bypassing traditional build steps, node modules, or backend server requirements, DrRx remains highly portable, exceptionally fast, and completely secure—running 100% on the client-side.
+DrRx is engineered with a **zero-dependency, single-file architecture** (`index.html`). By bypassing traditional build steps, node modules, or backend server requirements, DrRx remains highly portable, exceptionally fast, and completely secure—running 100% on your local device.
 
 ---
 
 ## ✨ Key Features & UI Highlights
 
-- **🎛️ Dynamic Data Binding:** Real-time client-side rendering structures for O/E vitals, dynamic patient metrics rows, interactive medication tables, and live-updating numbered lists for clinical notes and advices.
-- **✍️ HTML5 Signature Engine:** Fully interactive HTML5 signature canvas module, allowing doctors to securely append authentic signatures directly into the document structure.
-- **📱 Responsive Viewport Scaling:** Features a custom CSS aspect-ratio viewport transform scale engine. The A4 preview seamlessly shrinks to fit mobile viewports natively (eliminating horizontal scrolling) without compromising the high-fidelity 100% scale required for flawless print rendering.
-- **🧠 Smart UX Enhancements:** Employs intelligent, localized `localStorage` and `sessionStorage` arrays to persist state tracking. Includes a smart dashboard that detects the time of day and issues dynamic, personalized greetings ("Good Morning, Dr. 🌅").
-- **📄 Flawless PDF Compilation:** Integrated with `html2pdf.js` for perfect client-side vector compilation, transforming the live DOM structure into a razor-sharp, downloadable A4 PDF.
+- **👤 Doctor Profile Management:** Fully customizable doctor profile settings! You can now easily edit your name, specializations, degrees, registration number, clinic address, and contact details directly within the app. Your profile is automatically saved to your browser so it's always ready for your next prescription.
+- **🎛️ Dynamic Data Entry:** A seamless interface for entering O/E vitals, patient metrics, interactive medication tables, clinical notes, and advices. Includes an intuitive, fast-filtering auto-complete dropdown for medicines to speed up prescription writing.
+- **📄 Smart Multi-Page Pagination:** Writing a long prescription? No problem! DrRx features an intelligent auto-pagination engine that perfectly detects when your content overflows and automatically creates beautifully formatted, continuous A4 pages without cutting off your text.
+- **✍️ Digital Signature Engine:** Fully interactive signature canvas module, allowing doctors to securely append and save authentic signatures directly into the document.
+- **📱 Responsive Preview:** Features a dynamic layout engine that automatically scales the A4 preview to fit your screen size flawlessly, eliminating the need to zoom or scroll horizontally while previewing.
+- **📤 One-Click Sharing & Downloading:** Instantly generate a razor-sharp, flawless A4 PDF. You can directly download it to your device or use the new **Share** button to seamlessly send the prescription directly to patients via WhatsApp, Email, or any other app using your mobile device's native share menu.
+- **🧠 Smart Memory:** Employs intelligent browser storage to remember your preferred layout templates, doctor profile, and signature, so you never have to enter them twice.
 
 ---
 
 ## 🎨 Visual Layout Options
 
-DrRx ships with 5 distinct, professional A4 layout themes to suit varying clinical branding needs. Selection state is effortlessly maintained via `sessionStorage`.
+DrRx ships with 5 distinct, professional A4 layout themes to suit varying clinical branding needs. Selection state is effortlessly maintained.
 
 | Template Name                          | Design Philosophy                                                                                                           |
 | :------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------- |
